@@ -310,6 +310,12 @@ The image should expose only one application port.
 8000
 ```
 
+The container should run using the following Uvicorn command:
+
+```json
+["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips=*"]
+```
+
 Running the image should immediately provide access to both the UI and API.
 
 ---

@@ -33,7 +33,11 @@ Navigate to the `api` folder:
 ```bash
 cd api
 uv sync
+# In development:
 uv run fastapi dev app/main.py
+
+# In production / proxy settings:
+uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips=*
 ```
 The backend API will run at: `http://localhost:8000/api`
 FastAPI's Swagger documentation: `http://localhost:8000/docs`
