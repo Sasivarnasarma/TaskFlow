@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { api } from '../lib/api'
 import type { Task, TaskFilterParams } from '../lib/api'
-import { Plus, Search, Filter, AlertCircle, RefreshCw, Trash2, Pencil, X } from 'lucide-react'
+import { Plus, Search, Filter, AlertCircle, RefreshCw, Trash2, Pencil, X, CheckCircle2, Circle, CircleDot } from 'lucide-react'
 
 interface ToastState {
   message: string;
@@ -39,6 +39,9 @@ export default function Dashboard() {
   // Deletion state
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null)
   const [deleting, setDeleting] = useState(false)
+
+  // Quick toggling loading states (stores task ids currently transitioning)
+  const [transitioningIds, setTransitioningIds] = useState<number[]>([])
 
   // Toast state
   const [toast, setToast] = useState<ToastState | null>(null)
@@ -149,6 +152,42 @@ export default function Dashboard() {
       setEditError(err.message || 'Failed to update task')
     } finally {
       setUpdating(false)
+    }
+  }
+
+  // Quick cycle status: TODO -> IN_PROGRESS -> DONE -> TODO
+  const handleToggleComplete = async (task: Task) => {
+    let newStatus: 'TODO' | 'IN_PROGRESS' | 'DONE'
+    if (task.status === 'TODO') {
+      newStatus = 'IN_PROGRESS'
+    } else if (task.status === 'IN_PROGRESS') {
+      newStatus = 'DONE'
+    } else {
+      newStatus = 'TODO'
+    }
+    
+    // Add to transitioning list
+    setTransitioningIds(prev => [...prev, task.id])
+    
+    try {
+      await api.updateTask(task.id, { status: newStatus })
+      
+      let toastMessage = 'Task moved to In Progress'
+      if (newStatus === 'DONE') {
+        toastMessage = 'Task completed'
+      } else if (newStatus === 'TODO') {
+        toastMessage = 'Task reopened'
+      }
+      showToast(toastMessage)
+      
+      // Update local state directly to be fast and responsive, then load in background
+      setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: newStatus } : t))
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update status', 'error')
+    } finally {
+      setTransitioningIds(prev => prev.filter(id => id !== task.id))
+      // Background reload to sync all metrics
+      fetchTasks()
     }
   }
 
@@ -565,60 +604,102 @@ export default function Dashboard() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {tasks.map((task) => (
-            <div
-              key={task.id}
-              className="group rounded-xl border border-border bg-card p-5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md flex flex-col justify-between"
-            >
-              <div className="flex flex-col gap-2">
-                {/* Badges row */}
-                <div className="flex justify-between items-center">
-                  <span className={`text-[10px] font-semibold border px-2 py-0.5 rounded-full ${getPriorityColor(task.priority)}`}>
-                    {task.priority}
-                  </span>
-                  <span className={`text-[10px] font-semibold border px-2 py-0.5 rounded-full ${getStatusColor(task.status)}`}>
-                    {task.status.replace('_', ' ')}
-                  </span>
-                </div>
-                
-                {/* Title */}
-                <div className="flex justify-between items-start gap-2 mt-1">
-                  <h4 className="font-semibold text-lg leading-snug tracking-tight group-hover:text-primary transition-colors">
-                    {task.title}
-                  </h4>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0">
-                    <button
-                      onClick={() => handleOpenEdit(task)}
-                      className="text-muted-foreground hover:text-primary p-1 rounded hover:bg-accent transition-colors cursor-pointer"
-                      title="Edit task"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => setTaskToDelete(task)}
-                      className="text-muted-foreground hover:text-red-500 p-1 rounded hover:bg-accent transition-colors cursor-pointer"
-                      title="Delete task"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-                
-                {/* Description */}
-                {task.description && (
-                  <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3 mt-1">
-                    {task.description}
-                  </p>
-                )}
-              </div>
+          {tasks.map((task) => {
+            const isTransitioning = transitioningIds.includes(task.id)
+            const isDone = task.status === 'DONE'
+            const isInProgress = task.status === 'IN_PROGRESS'
 
-              {/* Card Footer info */}
-              <div className="mt-4 pt-3 border-t border-border/60 flex items-center justify-between text-[11px] text-muted-foreground/80">
-                <span>Created {new Date(task.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
-                <span>ID: #{task.id}</span>
+            return (
+              <div
+                key={task.id}
+                className={`group rounded-xl border p-5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md flex flex-col justify-between ${
+                  isDone ? 'bg-card/50 border-border/60' : 'bg-card border-border'
+                }`}
+              >
+                <div className="flex flex-col gap-2">
+                  {/* Badges row */}
+                  <div className="flex justify-between items-center">
+                    <span className={`text-[10px] font-semibold border px-2 py-0.5 rounded-full ${getPriorityColor(task.priority)}`}>
+                      {task.priority}
+                    </span>
+                    <span className={`text-[10px] font-semibold border px-2 py-0.5 rounded-full ${getStatusColor(task.status)}`}>
+                      {task.status.replace('_', ' ')}
+                    </span>
+                  </div>
+                  
+                  {/* Title & Actions row */}
+                  <div className="flex justify-between items-start gap-2 mt-1">
+                    <div className="flex items-start gap-2.5 flex-1 min-w-0">
+                      {/* Checkbox Trigger */}
+                      <button
+                        type="button"
+                        onClick={() => handleToggleComplete(task)}
+                        disabled={isTransitioning}
+                        className={`mt-1 hover:opacity-150 transition-colors shrink-0 cursor-pointer ${
+                          isDone 
+                            ? 'text-emerald-500' 
+                            : isInProgress 
+                            ? 'text-blue-500' 
+                            : 'text-muted-foreground/60'
+                        }`}
+                        title={isDone ? 'Reopen task' : isInProgress ? 'Complete task' : 'Move to In Progress'}
+                      >
+                        {isTransitioning ? (
+                          <div className="animate-spin rounded-full h-4.5 w-4.5 border border-primary border-t-transparent"></div>
+                        ) : isDone ? (
+                          <CheckCircle2 className="h-4.5 w-4.5" />
+                        ) : isInProgress ? (
+                          <CircleDot className="h-4.5 w-4.5" />
+                        ) : (
+                          <Circle className="h-4.5 w-4.5" />
+                        )}
+                      </button>
+                      
+                      <h4 className={`font-semibold text-lg leading-snug tracking-tight mt-0.5 break-words transition-all duration-200 ${
+                        isDone ? 'line-through text-muted-foreground/75' : 'text-foreground'
+                      }`}>
+                        {task.title}
+                      </h4>
+                    </div>
+
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0">
+                      <button
+                        onClick={() => handleOpenEdit(task)}
+                        className="text-muted-foreground hover:text-primary p-1 rounded hover:bg-accent transition-colors cursor-pointer"
+                        title="Edit task"
+                        disabled={isTransitioning}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => setTaskToDelete(task)}
+                        className="text-muted-foreground hover:text-red-500 p-1 rounded hover:bg-accent transition-colors cursor-pointer"
+                        title="Delete task"
+                        disabled={isTransitioning}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Description */}
+                  {task.description && (
+                    <p className={`text-sm leading-relaxed line-clamp-3 mt-1 transition-all ${
+                      isDone ? 'text-muted-foreground/50 line-through' : 'text-muted-foreground'
+                    }`}>
+                      {task.description}
+                    </p>
+                  )}
+                </div>
+
+                {/* Card Footer info */}
+                <div className="mt-4 pt-3 border-t border-border/60 flex items-center justify-between text-[11px] text-muted-foreground/80">
+                  <span>Created {new Date(task.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                  <span>ID: #{task.id}</span>
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
