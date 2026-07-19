@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { api } from '../lib/api'
 import type { Task, TaskFilterParams } from '../lib/api'
-import { Plus, Search, Filter, AlertCircle, RefreshCw, Trash2, X } from 'lucide-react'
+import { Plus, Search, Filter, AlertCircle, RefreshCw, Trash2, Pencil, X } from 'lucide-react'
 
 interface ToastState {
   message: string;
@@ -26,6 +26,15 @@ export default function Dashboard() {
   const [newPriority, setNewPriority] = useState('LOW')
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+
+  // Edit Task Form state
+  const [taskToEdit, setTaskToEdit] = useState<Task | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editDescription, setEditDescription] = useState('')
+  const [editPriority, setEditPriority] = useState<'LOW' | 'MEDIUM' | 'HIGH'>('LOW')
+  const [editStatus, setEditStatus] = useState<'TODO' | 'IN_PROGRESS' | 'DONE'>('TODO')
+  const [updating, setUpdating] = useState(false)
+  const [editError, setEditError] = useState<string | null>(null)
 
   // Deletion state
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null)
@@ -103,6 +112,43 @@ export default function Dashboard() {
       setFormError(err.message || 'Failed to create task')
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  // Open Edit Modal and prefill data
+  const handleOpenEdit = (task: Task) => {
+    setTaskToEdit(task)
+    setEditTitle(task.title)
+    setEditDescription(task.description || '')
+    setEditPriority(task.priority)
+    setEditStatus(task.status)
+    setEditError(null)
+  }
+
+  // Handle task editing submit
+  const handleUpdateTask = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!taskToEdit) return
+    if (!editTitle.trim()) {
+      setEditError('Title is required')
+      return
+    }
+    setUpdating(true)
+    setEditError(null)
+    try {
+      await api.updateTask(taskToEdit.id, {
+        title: editTitle.trim(),
+        description: editDescription.trim() || undefined,
+        priority: editPriority,
+        status: editStatus
+      })
+      setTaskToEdit(null)
+      showToast('Task updated successfully')
+      fetchTasks()
+    } catch (err: any) {
+      setEditError(err.message || 'Failed to update task')
+    } finally {
+      setUpdating(false)
     }
   }
 
@@ -199,6 +245,111 @@ export default function Dashboard() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Edit Task Modal */}
+      {taskToEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+          <form onSubmit={handleUpdateTask} className="bg-card border border-border rounded-xl max-w-md w-full p-6 shadow-xl animate-in fade-in zoom-in-95 duration-200 flex flex-col gap-4">
+            <div className="flex justify-between items-start">
+              <h3 className="text-lg font-semibold tracking-tight text-foreground">Edit Task</h3>
+              <button 
+                type="button"
+                onClick={() => setTaskToEdit(null)}
+                className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-accent transition-colors cursor-pointer"
+                disabled={updating}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {editError && (
+              <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-red-500 p-3 rounded-lg text-sm">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{editError}</span>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="edit-title" className="text-xs font-semibold text-muted-foreground">Title *</label>
+              <input
+                type="text"
+                id="edit-title"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                placeholder="e.g. Design Landing Page"
+                className="px-3.5 py-2 border border-border rounded-lg bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                disabled={updating}
+                maxLength={150}
+                required
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="edit-desc" className="text-xs font-semibold text-muted-foreground">Description</label>
+              <textarea
+                id="edit-desc"
+                rows={3}
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                placeholder="Add optional task details..."
+                className="px-3.5 py-2 border border-border rounded-lg bg-transparent text-sm resize-y focus:outline-none focus:ring-1 focus:ring-primary"
+                disabled={updating}
+                maxLength={1000}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="edit-priority" className="text-xs font-semibold text-muted-foreground">Priority</label>
+                <select
+                  id="edit-priority"
+                  value={editPriority}
+                  onChange={(e) => setEditPriority(e.target.value as any)}
+                  className="px-3 py-2 border border-border rounded-lg bg-card text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                  disabled={updating}
+                >
+                  <option value="LOW">Low</option>
+                  <option value="MEDIUM">Medium</option>
+                  <option value="HIGH">High</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="edit-status" className="text-xs font-semibold text-muted-foreground">Status</label>
+                <select
+                  id="edit-status"
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value as any)}
+                  className="px-3 py-2 border border-border rounded-lg bg-card text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                  disabled={updating}
+                >
+                  <option value="TODO">To Do</option>
+                  <option value="IN_PROGRESS">In Progress</option>
+                  <option value="DONE">Done</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end mt-4">
+              <button
+                type="button"
+                onClick={() => setTaskToEdit(null)}
+                className="px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent transition-colors cursor-pointer"
+                disabled={updating}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/95 transition-colors cursor-pointer"
+                disabled={updating}
+              >
+                {updating ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </form>
         </div>
       )}
 
@@ -435,13 +586,22 @@ export default function Dashboard() {
                   <h4 className="font-semibold text-lg leading-snug tracking-tight group-hover:text-primary transition-colors">
                     {task.title}
                   </h4>
-                  <button
-                    onClick={() => setTaskToDelete(task)}
-                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 p-1 rounded hover:bg-accent transition-all cursor-pointer"
-                    title="Delete task"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0">
+                    <button
+                      onClick={() => handleOpenEdit(task)}
+                      className="text-muted-foreground hover:text-primary p-1 rounded hover:bg-accent transition-colors cursor-pointer"
+                      title="Edit task"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => setTaskToDelete(task)}
+                      className="text-muted-foreground hover:text-red-500 p-1 rounded hover:bg-accent transition-colors cursor-pointer"
+                      title="Delete task"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
                 
                 {/* Description */}
