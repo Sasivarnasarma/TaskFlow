@@ -8,6 +8,13 @@ interface ToastState {
   type: 'success' | 'error';
 }
 
+interface TaskStatistics {
+  total: number;
+  completed: number;
+  pending: number;
+  completionRate: number;
+}
+
 export default function Dashboard() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
@@ -43,6 +50,14 @@ export default function Dashboard() {
   // Quick toggling loading states (stores task ids currently transitioning)
   const [transitioningIds, setTransitioningIds] = useState<number[]>([])
 
+  // Statistics state fetched from backend API
+  const [stats, setStats] = useState<TaskStatistics>({
+    total: 0,
+    completed: 0,
+    pending: 0,
+    completionRate: 0
+  })
+
   // Toast state
   const [toast, setToast] = useState<ToastState | null>(null)
 
@@ -61,7 +76,7 @@ export default function Dashboard() {
     }
   }, [toast])
 
-  // Fetch tasks helper
+  // Fetch tasks and statistics helper
   const fetchTasks = async () => {
     setLoading(true)
     setError(null)
@@ -72,8 +87,14 @@ export default function Dashboard() {
         search: searchQuery || undefined,
         sort: sortBy
       }
-      const data = await api.getTasks(params)
-      setTasks(data || [])
+      const [tasksData, statsData] = await Promise.all([
+        api.getTasks(params),
+        api.getStatistics()
+      ])
+      setTasks(tasksData || [])
+      if (statsData) {
+        setStats(statsData)
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to fetch tasks')
     } finally {
@@ -207,11 +228,8 @@ export default function Dashboard() {
     }
   }
 
-  // Calculate statistics metrics from tasks list (local sync for UI)
-  const totalTasks = tasks.length
-  const completedTasks = tasks.filter(t => t.status === 'DONE').length
-  const pendingTasks = tasks.filter(t => t.status !== 'DONE').length
-  const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+  // Map variables to state fetched from backend API
+  const { total: totalTasks, completed: completedTasks, pending: pendingTasks, completionRate } = stats
 
   // Priority color tags helper
   const getPriorityColor = (priority: string) => {

@@ -75,4 +75,6 @@ export const api = {
     request<void>(`/tasks/${id}`, {
       method: 'DELETE',
     }),
+    
+  getStatistics: () => request<{ total: number; completed: number; pending: number; completionRate: number }>('/statistics'),
 };
