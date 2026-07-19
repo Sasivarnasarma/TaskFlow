@@ -70,4 +70,9 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
+    
+  deleteTask: (id: number) =>
+    request<void>(`/tasks/${id}`, {
+      method: 'DELETE',
+    }),
 };

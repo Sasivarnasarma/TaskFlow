@@ -1,7 +1,12 @@
 import { useState, useEffect } from 'react'
 import { api } from '../lib/api'
 import type { Task, TaskFilterParams } from '../lib/api'
-import { Plus, Search, Filter, AlertCircle, RefreshCw } from 'lucide-react'
+import { Plus, Search, Filter, AlertCircle, RefreshCw, Trash2, X } from 'lucide-react'
+
+interface ToastState {
+  message: string;
+  type: 'success' | 'error';
+}
 
 export default function Dashboard() {
   const [tasks, setTasks] = useState<Task[]>([])
@@ -21,6 +26,28 @@ export default function Dashboard() {
   const [newPriority, setNewPriority] = useState('LOW')
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+
+  // Deletion state
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
+  // Toast state
+  const [toast, setToast] = useState<ToastState | null>(null)
+
+  // Trigger Toast Notification
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type })
+  }
+
+  // Clear toast after timeout
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => {
+        setToast(null)
+      }, 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [toast])
 
   // Fetch tasks helper
   const fetchTasks = async () => {
@@ -70,11 +97,28 @@ export default function Dashboard() {
       setNewDescription('')
       setNewPriority('LOW')
       setShowCreateForm(false)
+      showToast('Task created successfully')
       fetchTasks()
     } catch (err: any) {
       setFormError(err.message || 'Failed to create task')
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  // Handle task deletion execution
+  const handleDeleteTask = async () => {
+    if (!taskToDelete) return
+    setDeleting(true)
+    try {
+      await api.deleteTask(taskToDelete.id)
+      setTaskToDelete(null)
+      showToast('Task deleted successfully')
+      fetchTasks()
+    } catch (err: any) {
+      showToast(err.message || 'Failed to delete task', 'error')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -103,7 +147,61 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 relative">
+      
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-lg border shadow-lg animate-in slide-in-from-bottom duration-300 ${
+          toast.type === 'error' 
+            ? 'bg-red-500/10 border-red-500/20 text-red-500' 
+            : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
+        }`}>
+          {toast.type === 'error' ? <AlertCircle className="h-4.5 w-4.5" /> : null}
+          <span className="text-sm font-medium">{toast.message}</span>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {taskToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+          <div className="bg-card border border-border rounded-xl max-w-md w-full p-6 shadow-xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-lg font-semibold tracking-tight text-foreground">Delete Task?</h3>
+              <button 
+                onClick={() => setTaskToDelete(null)}
+                className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-accent transition-colors cursor-pointer"
+                disabled={deleting}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Are you sure you want to delete the task <strong className="text-foreground font-medium">"{taskToDelete.title}"</strong>? This action cannot be undone.
+            </p>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => setTaskToDelete(null)}
+                className="px-4 py-2 text-sm font-medium border border-border rounded-lg hover:bg-accent cursor-pointer"
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteTask}
+                className="px-4 py-2 text-sm font-medium bg-red-600 hover:bg-red-500 text-white rounded-lg cursor-pointer"
+                disabled={deleting}
+              >
+                {deleting ? 'Deleting...' : 'Delete Task'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
@@ -308,7 +406,7 @@ export default function Dashboard() {
           {!searchQuery && !statusFilter && !priorityFilter && (
             <button
               onClick={() => setShowCreateForm(true)}
-              className="mt-4 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium shadow-xs hover:bg-primary/95 transition-all"
+              className="mt-4 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium shadow-xs hover:bg-primary/95 transition-all cursor-pointer"
             >
               Get Started
             </button>
@@ -333,9 +431,18 @@ export default function Dashboard() {
                 </div>
                 
                 {/* Title */}
-                <h4 className="font-semibold text-lg leading-snug tracking-tight mt-1 group-hover:text-primary transition-colors">
-                  {task.title}
-                </h4>
+                <div className="flex justify-between items-start gap-2 mt-1">
+                  <h4 className="font-semibold text-lg leading-snug tracking-tight group-hover:text-primary transition-colors">
+                    {task.title}
+                  </h4>
+                  <button
+                    onClick={() => setTaskToDelete(task)}
+                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 p-1 rounded hover:bg-accent transition-all cursor-pointer"
+                    title="Delete task"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
                 
                 {/* Description */}
                 {task.description && (
