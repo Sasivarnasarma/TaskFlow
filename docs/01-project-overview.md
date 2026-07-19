@@ -2,7 +2,7 @@
 
 > **Project Name:** TaskFlow  
 > **Version:** 1.0.0  
-> **Project Type:** Full-Stack Web Application  
+> **Project Type:** Full-Stack Web Application
 
 ---
 

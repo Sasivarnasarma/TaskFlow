@@ -686,27 +686,27 @@ question
 
 Each milestone should map to a dedicated feature branch.
 
-| Milestone | Branch |
-|-----------|--------|
-| Project Setup | feature/project-setup |
-| API Bootstrap | feature/api-bootstrap |
-| UI Bootstrap | feature/ui-bootstrap |
-| Database | feature/database |
-| Task API | feature/task-api |
-| Dashboard | feature/dashboard-ui |
-| Create Task | feature/create-task |
-| Edit Task | feature/edit-task |
-| Delete Task | feature/delete-task |
-| Task Status | feature/task-status |
+| Milestone       | Branch                |
+| --------------- | --------------------- |
+| Project Setup   | feature/project-setup |
+| API Bootstrap   | feature/api-bootstrap |
+| UI Bootstrap    | feature/ui-bootstrap  |
+| Database        | feature/database      |
+| Task API        | feature/task-api      |
+| Dashboard       | feature/dashboard-ui  |
+| Create Task     | feature/create-task   |
+| Edit Task       | feature/edit-task     |
+| Delete Task     | feature/delete-task   |
+| Task Status     | feature/task-status   |
 | Search & Filter | feature/search-filter |
-| Statistics | feature/statistics |
-| API Tests | feature/api-tests |
-| UI Tests | feature/ui-tests |
-| Docker | feature/docker |
-| CI | feature/ci |
-| Secrets | feature/secrets |
-| Publish | feature/publish |
-| Documentation | feature/documentation |
+| Statistics      | feature/statistics    |
+| API Tests       | feature/api-tests     |
+| UI Tests        | feature/ui-tests      |
+| Docker          | feature/docker        |
+| CI              | feature/ci            |
+| Secrets         | feature/secrets       |
+| Publish         | feature/publish       |
+| Documentation   | feature/documentation |
 
 ---
 

@@ -48,3 +48,6 @@ htmlcov/
 # OS
 .DS_Store
 Thumbs.db
+
+# Compiled backend static files (React build deployment)
+api/app/static/

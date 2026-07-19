@@ -502,7 +502,16 @@ The container exposes only one port.
 The container should execute the following Uvicorn command:
 
 ```json
-["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips=*"]
+[
+  "uvicorn",
+  "main:app",
+  "--host",
+  "0.0.0.0",
+  "--port",
+  "8000",
+  "--proxy-headers",
+  "--forwarded-allow-ips=*"
+]
 ```
 
 Application access:

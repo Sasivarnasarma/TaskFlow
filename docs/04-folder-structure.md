@@ -41,13 +41,13 @@ taskflow/
 
 # 3. Root Folder Responsibilities
 
-| Folder | Purpose |
-|---------|----------|
-| ui | React application |
-| api | FastAPI application |
-| docker | Docker-related files |
-| docs | Project documentation |
-| scripts | Utility scripts |
+| Folder  | Purpose                      |
+| ------- | ---------------------------- |
+| ui      | React application            |
+| api     | FastAPI application          |
+| docker  | Docker-related files         |
+| docs    | Project documentation        |
+| scripts | Utility scripts              |
 | .github | GitHub Actions and templates |
 
 ---

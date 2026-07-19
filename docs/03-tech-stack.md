@@ -15,30 +15,30 @@ The technologies selected for this project are intentionally lightweight while s
 
 # 2. Technology Overview
 
-| Category | Technology |
-|----------|------------|
-| Frontend | React |
-| Language | TypeScript |
-| Build Tool | Vite |
-| Styling | Tailwind CSS |
-| UI Components | shadcn/ui |
-| Icons | Lucide React |
-| Routing | React Router |
-| Data Fetching | TanStack Query |
-| Backend | FastAPI |
-| Language | Python |
-| Validation | Pydantic |
-| ORM | SQLAlchemy |
-| Database | SQLite |
-| Python Package Manager | uv |
-| JavaScript Package Manager | pnpm |
-| Testing (UI) | Vitest + React Testing Library |
-| Testing (API) | pytest |
-| Containerization | Docker |
-| CI/CD | GitHub Actions |
-| Image Registry | GitHub Container Registry (GHCR) |
-| Version Control | Git |
-| Repository Hosting | GitHub |
+| Category                   | Technology                       |
+| -------------------------- | -------------------------------- |
+| Frontend                   | React                            |
+| Language                   | TypeScript                       |
+| Build Tool                 | Vite                             |
+| Styling                    | Tailwind CSS                     |
+| UI Components              | shadcn/ui                        |
+| Icons                      | Lucide React                     |
+| Routing                    | React Router                     |
+| Data Fetching              | TanStack Query                   |
+| Backend                    | FastAPI                          |
+| Language                   | Python                           |
+| Validation                 | Pydantic                         |
+| ORM                        | SQLAlchemy                       |
+| Database                   | SQLite                           |
+| Python Package Manager     | uv                               |
+| JavaScript Package Manager | pnpm                             |
+| Testing (UI)               | Vitest + React Testing Library   |
+| Testing (API)              | pytest                           |
+| Containerization           | Docker                           |
+| CI/CD                      | GitHub Actions                   |
+| Image Registry             | GitHub Container Registry (GHCR) |
+| Version Control            | Git                              |
+| Repository Hosting         | GitHub                           |
 
 ---
 
