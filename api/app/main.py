@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.exceptions import RequestValidationError
 
 from app.config import settings
-from app.routers import health, tasks
+from app.routers import health, tasks, statistics
 from app.database.base import Base
 from app.database.engine import engine
 import app.models  # Register models for table creation
@@ -61,6 +61,7 @@ app.add_middleware(
 # API routes
 app.include_router(health.router, prefix=settings.API_PREFIX)
 app.include_router(tasks.router, prefix=settings.API_PREFIX)
+app.include_router(statistics.router, prefix=settings.API_PREFIX)
 
 # Static file serving for SPA frontend in production
 if os.path.exists(settings.STATIC_DIR):
