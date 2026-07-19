@@ -1,17 +1,18 @@
-from typing import List, Optional
-from sqlalchemy.orm import Session
 from sqlalchemy import or_
+from sqlalchemy.orm import Session
+
 from app.models.task import Task
+
 
 class TaskRepository:
     def get_all(
         self,
         db: Session,
-        status: Optional[str] = None,
-        priority: Optional[str] = None,
-        search: Optional[str] = None,
-        sort: Optional[str] = None
-    ) -> List[Task]:
+        status: str | None = None,
+        priority: str | None = None,
+        search: str | None = None,
+        sort: str | None = None,
+    ) -> list[Task]:
         query = db.query(Task)
 
         if status:
@@ -22,7 +23,7 @@ class TaskRepository:
             query = query.filter(
                 or_(
                     Task.title.ilike(f"%{search}%"),
-                    Task.description.ilike(f"%{search}%")
+                    Task.description.ilike(f"%{search}%"),
                 )
             )
 
@@ -39,7 +40,7 @@ class TaskRepository:
 
         return query.all()
 
-    def get_by_id(self, db: Session, task_id: int) -> Optional[Task]:
+    def get_by_id(self, db: Session, task_id: int) -> Task | None:
         return db.query(Task).filter(Task.id == task_id).first()
 
     def create(self, db: Session, task: Task) -> Task:

@@ -25,31 +25,82 @@ taskflow/
 ## Setup & Local Development
 
 ### Prerequisites
-* **Node.js** (v18+ recommended) & **pnpm**
-* **Python** (v3.11+ recommended) & **uv** (fast Python package installer/manager)
 
-### 1. Backend (API) Setup
+#### 1. Install Node.js & pnpm
+* **Node.js**: (v18+ recommended)
+* **pnpm** installation:
+  * **via npm** (if Node is already installed):
+    ```bash
+    npm install -g pnpm
+    ```
+  * **via Standalone Script**:
+    * **Windows (PowerShell)**:
+      ```powershell
+      iwr https://get.pnpm.io/install.ps1 -useb | iex
+      ```
+    * **macOS/Linux**:
+      ```bash
+      curl -fsSL https://get.pnpm.io/install.sh | sh -
+      ```
+
+#### 2. Install Python & uv
+* **Python**: (v3.11+ recommended)
+* **uv** (fast Python package installer/manager) installation:
+  * **Windows (PowerShell)**:
+    ```powershell
+    irm https://astral.sh/uv/install.ps1 | iex
+    ```
+  * **macOS/Linux**:
+    ```bash
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    ```
+  * **via pip**:
+    ```bash
+    pip install uv
+    ```
+
+---
+
+### Monorepo Setup (Recommended)
+You can set up and run the entire application directly from the **monorepo root directory**:
+
+```bash
+# 1. Install all Node and Python dependencies in one step (runs uv sync automatically)
+pnpm install
+
+# 2. Start frontend (Vite) and backend (Uvicorn) concurrently
+pnpm dev
+
+# 3. Format all React and Python codebase files
+pnpm format
+
+# 4. Lint both frontend and backend codebases
+pnpm lint
+```
+
+---
+
+### Individual Folder Setup (Alternative)
+
+#### 1. Backend (API) Setup
 Navigate to the `api` folder:
 ```bash
 cd api
 uv sync
 # In development:
-uv run fastapi dev app/main.py
-
-# In production / proxy settings:
-uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips=*
+uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
-The backend API will run at: `http://localhost:8000/api`
-FastAPI's Swagger documentation: `http://localhost:8000/docs`
+* API endpoint: `http://localhost:8000/api`
+* Swagger docs: `http://localhost:8000/docs`
 
-### 2. Frontend (UI) Setup
+#### 2. Frontend (UI) Setup
 Navigate to the `ui` folder:
 ```bash
 cd ui
 pnpm install
 pnpm dev
 ```
-The dev server will run at: `http://localhost:5173`
+* Dev Server: `http://localhost:5173`
 
 ---
 

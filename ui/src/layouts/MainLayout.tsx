@@ -34,7 +34,9 @@ export default function MainLayout() {
           <Link
             to="/"
             className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              location.pathname === '/' ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:bg-secondary/50'
+              location.pathname === '/'
+                ? 'bg-secondary text-foreground'
+                : 'text-muted-foreground hover:bg-secondary/50'
             }`}
           >
             <LayoutDashboard className="h-4 w-4" />

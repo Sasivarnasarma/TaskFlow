@@ -1,31 +1,43 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { api } from '../lib/api'
 import type { Task, TaskFilterParams } from '../lib/api'
-import { Plus, Search, Filter, AlertCircle, RefreshCw, Trash2, Pencil, X, CheckCircle2, Circle, CircleDot } from 'lucide-react'
+import {
+  Plus,
+  Search,
+  Filter,
+  AlertCircle,
+  RefreshCw,
+  Trash2,
+  Pencil,
+  X,
+  CheckCircle2,
+  Circle,
+  CircleDot,
+} from 'lucide-react'
 
 interface ToastState {
-  message: string;
-  type: 'success' | 'error';
+  message: string
+  type: 'success' | 'error'
 }
 
 interface TaskStatistics {
-  total: number;
-  completed: number;
-  pending: number;
-  completionRate: number;
+  total: number
+  completed: number
+  pending: number
+  completionRate: number
 }
 
 export default function Dashboard() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
+
   // Filters state
   const [statusFilter, setStatusFilter] = useState('')
   const [priorityFilter, setPriorityFilter] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('newest')
-  
+
   // Task Creation Form state
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [newTitle, setNewTitle] = useState('')
@@ -55,7 +67,7 @@ export default function Dashboard() {
     total: 0,
     completed: 0,
     pending: 0,
-    completionRate: 0
+    completionRate: 0,
   })
 
   // Toast state
@@ -77,7 +89,7 @@ export default function Dashboard() {
   }, [toast])
 
   // Fetch tasks and statistics helper
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
@@ -85,12 +97,9 @@ export default function Dashboard() {
         status: statusFilter || undefined,
         priority: priorityFilter || undefined,
         search: searchQuery || undefined,
-        sort: sortBy
+        sort: sortBy,
       }
-      const [tasksData, statsData] = await Promise.all([
-        api.getTasks(params),
-        api.getStatistics()
-      ])
+      const [tasksData, statsData] = await Promise.all([api.getTasks(params), api.getStatistics()])
       setTasks(tasksData || [])
       if (statsData) {
         setStats(statsData)
@@ -100,16 +109,19 @@ export default function Dashboard() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [statusFilter, priorityFilter, searchQuery, sortBy])
 
   // Reload when filters modify
   useEffect(() => {
-    const delayDebounce = setTimeout(() => {
-      fetchTasks()
-    }, searchQuery ? 300 : 0) // Debounce search changes
+    const delayDebounce = setTimeout(
+      () => {
+        fetchTasks()
+      },
+      searchQuery ? 300 : 0
+    ) // Debounce search changes
 
     return () => clearTimeout(delayDebounce)
-  }, [statusFilter, priorityFilter, searchQuery, sortBy])
+  }, [fetchTasks, searchQuery])
 
   // Handle task creation submit
   const handleCreateTask = async (e: React.FormEvent) => {
@@ -164,7 +176,7 @@ export default function Dashboard() {
         title: editTitle.trim(),
         description: editDescription.trim() || undefined,
         priority: editPriority,
-        status: editStatus
+        status: editStatus,
       })
       setTaskToEdit(null)
       showToast('Task updated successfully')
@@ -186,13 +198,13 @@ export default function Dashboard() {
     } else {
       newStatus = 'TODO'
     }
-    
+
     // Add to transitioning list
-    setTransitioningIds(prev => [...prev, task.id])
-    
+    setTransitioningIds((prev) => [...prev, task.id])
+
     try {
       await api.updateTask(task.id, { status: newStatus })
-      
+
       let toastMessage = 'Task moved to In Progress'
       if (newStatus === 'DONE') {
         toastMessage = 'Task completed'
@@ -200,13 +212,13 @@ export default function Dashboard() {
         toastMessage = 'Task reopened'
       }
       showToast(toastMessage)
-      
+
       // Update local state directly to be fast and responsive, then load in background
-      setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: newStatus } : t))
+      setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: newStatus } : t)))
     } catch (err: any) {
       showToast(err.message || 'Failed to update status', 'error')
     } finally {
-      setTransitioningIds(prev => prev.filter(id => id !== task.id))
+      setTransitioningIds((prev) => prev.filter((id) => id !== task.id))
       // Background reload to sync all metrics
       fetchTasks()
     }
@@ -229,36 +241,48 @@ export default function Dashboard() {
   }
 
   // Map variables to state fetched from backend API
-  const { total: totalTasks, completed: completedTasks, pending: pendingTasks, completionRate } = stats
+  const {
+    total: totalTasks,
+    completed: completedTasks,
+    pending: pendingTasks,
+    completionRate,
+  } = stats
 
   // Priority color tags helper
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'HIGH': return 'bg-red-500/10 text-red-500 border-red-500/20'
-      case 'MEDIUM': return 'bg-amber-500/10 text-amber-500 border-amber-500/20'
-      default: return 'bg-slate-500/10 text-slate-500 border-slate-500/20'
+      case 'HIGH':
+        return 'bg-red-500/10 text-red-500 border-red-500/20'
+      case 'MEDIUM':
+        return 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+      default:
+        return 'bg-slate-500/10 text-slate-500 border-slate-500/20'
     }
   }
 
   // Status label tags helper
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'DONE': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-      case 'IN_PROGRESS': return 'bg-blue-500/10 text-blue-500 border-blue-500/20'
-      default: return 'bg-slate-500/10 text-slate-500 border-slate-500/20'
+      case 'DONE':
+        return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+      case 'IN_PROGRESS':
+        return 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+      default:
+        return 'bg-slate-500/10 text-slate-500 border-slate-500/20'
     }
   }
 
   return (
     <div className="flex flex-col gap-6 relative">
-      
       {/* Toast Notification */}
       {toast && (
-        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-lg border shadow-lg animate-in slide-in-from-bottom duration-300 ${
-          toast.type === 'error' 
-            ? 'bg-red-500/10 border-red-500/20 text-red-500' 
-            : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
-        }`}>
+        <div
+          className={`fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-lg border shadow-lg animate-in slide-in-from-bottom duration-300 ${
+            toast.type === 'error'
+              ? 'bg-red-500/10 border-red-500/20 text-red-500'
+              : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
+          }`}
+        >
           {toast.type === 'error' ? <AlertCircle className="h-4.5 w-4.5" /> : null}
           <span className="text-sm font-medium">{toast.message}</span>
         </div>
@@ -270,7 +294,7 @@ export default function Dashboard() {
           <div className="bg-card border border-border rounded-xl max-w-md w-full p-6 shadow-xl animate-in fade-in zoom-in-95 duration-200">
             <div className="flex justify-between items-start mb-4">
               <h3 className="text-lg font-semibold tracking-tight text-foreground">Delete Task?</h3>
-              <button 
+              <button
                 onClick={() => setTaskToDelete(null)}
                 className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-accent transition-colors cursor-pointer"
                 disabled={deleting}
@@ -278,9 +302,11 @@ export default function Dashboard() {
                 <X className="h-4 w-4" />
               </button>
             </div>
-            
+
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Are you sure you want to delete the task <strong className="text-foreground font-medium">"{taskToDelete.title}"</strong>? This action cannot be undone.
+              Are you sure you want to delete the task{' '}
+              <strong className="text-foreground font-medium">"{taskToDelete.title}"</strong>? This
+              action cannot be undone.
             </p>
 
             <div className="flex justify-end gap-3 mt-6">
@@ -308,10 +334,13 @@ export default function Dashboard() {
       {/* Edit Task Modal */}
       {taskToEdit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
-          <form onSubmit={handleUpdateTask} className="bg-card border border-border rounded-xl max-w-md w-full p-6 shadow-xl animate-in fade-in zoom-in-95 duration-200 flex flex-col gap-4">
+          <form
+            onSubmit={handleUpdateTask}
+            className="bg-card border border-border rounded-xl max-w-md w-full p-6 shadow-xl animate-in fade-in zoom-in-95 duration-200 flex flex-col gap-4"
+          >
             <div className="flex justify-between items-start">
               <h3 className="text-lg font-semibold tracking-tight text-foreground">Edit Task</h3>
-              <button 
+              <button
                 type="button"
                 onClick={() => setTaskToEdit(null)}
                 className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-accent transition-colors cursor-pointer"
@@ -329,7 +358,9 @@ export default function Dashboard() {
             )}
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="edit-title" className="text-xs font-semibold text-muted-foreground">Title *</label>
+              <label htmlFor="edit-title" className="text-xs font-semibold text-muted-foreground">
+                Title *
+              </label>
               <input
                 type="text"
                 id="edit-title"
@@ -344,7 +375,9 @@ export default function Dashboard() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="edit-desc" className="text-xs font-semibold text-muted-foreground">Description</label>
+              <label htmlFor="edit-desc" className="text-xs font-semibold text-muted-foreground">
+                Description
+              </label>
               <textarea
                 id="edit-desc"
                 rows={3}
@@ -359,7 +392,12 @@ export default function Dashboard() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="edit-priority" className="text-xs font-semibold text-muted-foreground">Priority</label>
+                <label
+                  htmlFor="edit-priority"
+                  className="text-xs font-semibold text-muted-foreground"
+                >
+                  Priority
+                </label>
                 <select
                   id="edit-priority"
                   value={editPriority}
@@ -374,7 +412,12 @@ export default function Dashboard() {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="edit-status" className="text-xs font-semibold text-muted-foreground">Status</label>
+                <label
+                  htmlFor="edit-status"
+                  className="text-xs font-semibold text-muted-foreground"
+                >
+                  Status
+                </label>
                 <select
                   id="edit-status"
                   value={editStatus}
@@ -431,9 +474,12 @@ export default function Dashboard() {
           { label: 'Total Tasks', value: totalTasks },
           { label: 'Completed', value: completedTasks },
           { label: 'Pending', value: pendingTasks },
-          { label: 'Completion Rate', value: `${completionRate}%` }
+          { label: 'Completion Rate', value: `${completionRate}%` },
         ].map((stat, i) => (
-          <div key={i} className="rounded-xl border border-border bg-card p-6 shadow-xs transition-all hover:shadow-md">
+          <div
+            key={i}
+            className="rounded-xl border border-border bg-card p-6 shadow-xs transition-all hover:shadow-md"
+          >
             <h3 className="text-sm font-medium text-muted-foreground">{stat.label}</h3>
             <p className="text-3xl font-bold mt-2 tracking-tight">{stat.value}</p>
           </div>
@@ -442,7 +488,10 @@ export default function Dashboard() {
 
       {/* Task Creation Form Dropdown */}
       {showCreateForm && (
-        <form onSubmit={handleCreateTask} className="rounded-xl border border-border bg-card p-6 shadow-xs flex flex-col gap-4 max-w-2xl transition-all">
+        <form
+          onSubmit={handleCreateTask}
+          className="rounded-xl border border-border bg-card p-6 shadow-xs flex flex-col gap-4 max-w-2xl transition-all"
+        >
           <h3 className="font-semibold text-lg">Create New Task</h3>
           {formError && (
             <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-red-500 p-3 rounded-lg text-sm">
@@ -451,7 +500,9 @@ export default function Dashboard() {
             </div>
           )}
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="title" className="text-xs font-semibold text-muted-foreground">Title *</label>
+            <label htmlFor="title" className="text-xs font-semibold text-muted-foreground">
+              Title *
+            </label>
             <input
               type="text"
               id="title"
@@ -465,7 +516,9 @@ export default function Dashboard() {
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="desc" className="text-xs font-semibold text-muted-foreground">Description</label>
+            <label htmlFor="desc" className="text-xs font-semibold text-muted-foreground">
+              Description
+            </label>
             <textarea
               id="desc"
               rows={3}
@@ -478,7 +531,9 @@ export default function Dashboard() {
             />
           </div>
           <div className="flex flex-col gap-1.5 w-full sm:w-48">
-            <label htmlFor="priority" className="text-xs font-semibold text-muted-foreground">Priority</label>
+            <label htmlFor="priority" className="text-xs font-semibold text-muted-foreground">
+              Priority
+            </label>
             <select
               id="priority"
               value={newPriority}
@@ -527,7 +582,7 @@ export default function Dashboard() {
             className="w-full pl-10 pr-4 py-2 border border-border rounded-lg bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </div>
-        
+
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1.5 border border-border rounded-lg px-2 bg-card">
@@ -608,8 +663,8 @@ export default function Dashboard() {
           <p className="text-muted-foreground font-semibold text-lg">No tasks found</p>
           <p className="text-sm text-muted-foreground/80 mt-1 max-w-xs">
             {searchQuery || statusFilter || priorityFilter
-              ? "No tasks match your current filter parameters. Try expanding your search queries."
-              : "Start organizing your flow by adding new task items."}
+              ? 'No tasks match your current filter parameters. Try expanding your search queries.'
+              : 'Start organizing your flow by adding new task items.'}
           </p>
           {!searchQuery && !statusFilter && !priorityFilter && (
             <button
@@ -637,14 +692,18 @@ export default function Dashboard() {
                 <div className="flex flex-col gap-2">
                   {/* Badges row */}
                   <div className="flex justify-between items-center">
-                    <span className={`text-[10px] font-semibold border px-2 py-0.5 rounded-full ${getPriorityColor(task.priority)}`}>
+                    <span
+                      className={`text-[10px] font-semibold border px-2 py-0.5 rounded-full ${getPriorityColor(task.priority)}`}
+                    >
                       {task.priority}
                     </span>
-                    <span className={`text-[10px] font-semibold border px-2 py-0.5 rounded-full ${getStatusColor(task.status)}`}>
+                    <span
+                      className={`text-[10px] font-semibold border px-2 py-0.5 rounded-full ${getStatusColor(task.status)}`}
+                    >
                       {task.status.replace('_', ' ')}
                     </span>
                   </div>
-                  
+
                   {/* Title & Actions row */}
                   <div className="flex justify-between items-start gap-2 mt-1">
                     <div className="flex items-start gap-2.5 flex-1 min-w-0">
@@ -654,13 +713,19 @@ export default function Dashboard() {
                         onClick={() => handleToggleComplete(task)}
                         disabled={isTransitioning}
                         className={`mt-1 hover:opacity-150 transition-colors shrink-0 cursor-pointer ${
-                          isDone 
-                            ? 'text-emerald-500' 
-                            : isInProgress 
-                            ? 'text-blue-500' 
-                            : 'text-muted-foreground/60'
+                          isDone
+                            ? 'text-emerald-500'
+                            : isInProgress
+                              ? 'text-blue-500'
+                              : 'text-muted-foreground/60'
                         }`}
-                        title={isDone ? 'Reopen task' : isInProgress ? 'Complete task' : 'Move to In Progress'}
+                        title={
+                          isDone
+                            ? 'Reopen task'
+                            : isInProgress
+                              ? 'Complete task'
+                              : 'Move to In Progress'
+                        }
                       >
                         {isTransitioning ? (
                           <div className="animate-spin rounded-full h-4.5 w-4.5 border border-primary border-t-transparent"></div>
@@ -672,10 +737,12 @@ export default function Dashboard() {
                           <Circle className="h-4.5 w-4.5" />
                         )}
                       </button>
-                      
-                      <h4 className={`font-semibold text-lg leading-snug tracking-tight mt-0.5 break-words transition-all duration-200 ${
-                        isDone ? 'line-through text-muted-foreground/75' : 'text-foreground'
-                      }`}>
+
+                      <h4
+                        className={`font-semibold text-lg leading-snug tracking-tight mt-0.5 break-words transition-all duration-200 ${
+                          isDone ? 'line-through text-muted-foreground/75' : 'text-foreground'
+                        }`}
+                      >
                         {task.title}
                       </h4>
                     </div>
@@ -699,12 +766,14 @@ export default function Dashboard() {
                       </button>
                     </div>
                   </div>
-                  
+
                   {/* Description */}
                   {task.description && (
-                    <p className={`text-sm leading-relaxed line-clamp-3 mt-1 transition-all ${
-                      isDone ? 'text-muted-foreground/50 line-through' : 'text-muted-foreground'
-                    }`}>
+                    <p
+                      className={`text-sm leading-relaxed line-clamp-3 mt-1 transition-all ${
+                        isDone ? 'text-muted-foreground/50 line-through' : 'text-muted-foreground'
+                      }`}
+                    >
                       {task.description}
                     </p>
                   )}
@@ -712,7 +781,13 @@ export default function Dashboard() {
 
                 {/* Card Footer info */}
                 <div className="mt-4 pt-3 border-t border-border/60 flex items-center justify-between text-[11px] text-muted-foreground/80">
-                  <span>Created {new Date(task.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                  <span>
+                    Created{' '}
+                    {new Date(task.createdAt).toLocaleDateString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </span>
                   <span>ID: #{task.id}</span>
                 </div>
               </div>

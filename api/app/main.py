@@ -1,32 +1,31 @@
 import os
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
-from fastapi.exceptions import RequestValidationError
 
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+
+import app.models  # Register models for table creation
 from app.config import settings
-from app.routers import health, tasks, statistics
 from app.database.base import Base
 from app.database.engine import engine
-import app.models  # Register models for table creation
+from app.routers import health, statistics, tasks
 
 # Auto-create tables in SQLite database
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title=settings.PROJECT_NAME)
 
+
 # Custom HTTP Exception handler to return enveloped {"success": false, "data": null, "error": "..."}
 @app.exception_handler(HTTPException)
 async def custom_http_exception_handler(request: Request, exc: HTTPException):
     return JSONResponse(
         status_code=exc.status_code,
-        content={
-            "success": False,
-            "data": None,
-            "error": exc.detail
-        }
+        content={"success": False, "data": None, "error": exc.detail},
     )
+
 
 # Custom Request Validation exception handler returning enveloped output
 @app.exception_handler(RequestValidationError)
@@ -39,15 +38,9 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         message = f"{field}: {msg}" if field else msg
     else:
         message = "Validation error"
-    
-    return JSONResponse(
-        status_code=422,
-        content={
-            "success": False,
-            "data": None,
-            "error": message
-        }
-    )
+
+    return JSONResponse(status_code=422, content={"success": False, "data": None, "error": message})
+
 
 # CORS configuration
 app.add_middleware(
@@ -75,20 +68,12 @@ if os.path.exists(settings.STATIC_DIR):
             error_message = exc.detail if hasattr(exc, "detail") else "Not Found"
             return JSONResponse(
                 status_code=404,
-                content={
-                    "success": False,
-                    "data": None,
-                    "error": error_message
-                }
+                content={"success": False, "data": None, "error": error_message},
             )
         index_path = os.path.join(settings.STATIC_DIR, "index.html")
         if os.path.exists(index_path):
             return FileResponse(index_path)
         return JSONResponse(
             status_code=404,
-            content={
-                "success": False,
-                "data": None,
-                "error": "Not Found"
-            }
+            content={"success": False, "data": None, "error": "Not Found"},
         )
