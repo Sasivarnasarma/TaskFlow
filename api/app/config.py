@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     # We will serve the static files from this directory in production
     STATIC_DIR: str = "app/static"
 
+    # SQLite Database URL
+    DATABASE_URL: str = "sqlite:///./tasks.db"
+
     class Config:
         env_file = ".env"
 

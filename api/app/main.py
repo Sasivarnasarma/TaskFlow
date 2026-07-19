@@ -6,6 +6,12 @@ from fastapi.responses import FileResponse
 
 from app.config import settings
 from app.routers import health
+from app.database.base import Base
+from app.database.engine import engine
+import app.models  # Register models for table creation
+
+# Auto-create tables in SQLite database
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title=settings.PROJECT_NAME)
 
