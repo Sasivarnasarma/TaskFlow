@@ -165,7 +165,9 @@ Example
 
 ```json
 {
-  "data": {}
+  "success": true,
+  "data": {},
+  "error": null
 }
 ```
 
@@ -173,7 +175,9 @@ Collections
 
 ```json
 {
-  "data": []
+  "success": true,
+  "data": [],
+  "error": null
 }
 ```
 
@@ -183,11 +187,13 @@ Errors
 
 ```json
 {
-  "message": "Task not found"
+  "success": false,
+  "data": null,
+  "error": "Task not found"
 }
 ```
 
-The API should remain simple and avoid unnecessary wrapper objects.
+The API should remain simple and use standard response envelopes.
 
 ---
 
@@ -265,12 +271,14 @@ Response
 
 ```json
 {
+  "success": true,
   "data": [
     {
       "id": 1,
       "title": "Write Tests"
     }
-  ]
+  ],
+  "error": null
 }
 ```
 
@@ -302,10 +310,12 @@ Response
 
 ```json
 {
+  "success": true,
   "data": {
     "id": 10,
     "title": "Write Tests"
-  }
+  },
+  "error": null
 }
 ```
 
@@ -348,10 +358,12 @@ Response
 
 ```json
 {
+  "success": true,
   "data": {
     "id": 20,
     "title": "Write Documentation"
-  }
+  },
+  "error": null
 }
 ```
 
@@ -386,9 +398,11 @@ Response
 
 ```json
 {
+  "success": true,
   "data": {
     "id": 20
-  }
+  },
+  "error": null
 }
 ```
 
@@ -446,9 +460,11 @@ Response
 
 ```json
 {
+  "success": true,
   "data": {
     "status": "DONE"
-  }
+  },
+  "error": null
 }
 ```
 
@@ -470,9 +486,11 @@ Response
 
 ```json
 {
+  "success": true,
   "data": {
     "status": "TODO"
-  }
+  },
+  "error": null
 }
 ```
 
@@ -490,12 +508,14 @@ Response
 
 ```json
 {
+  "success": true,
   "data": {
     "total": 12,
     "completed": 8,
     "pending": 4,
     "completionRate": 67
-  }
+  },
+  "error": null
 }
 ```
 
@@ -584,7 +604,9 @@ Validation Error
 
 ```json
 {
-  "message": "Title cannot be empty"
+  "success": false,
+  "data": null,
+  "error": "Title cannot be empty"
 }
 ```
 
@@ -592,7 +614,9 @@ Not Found
 
 ```json
 {
-  "message": "Task not found"
+  "success": false,
+  "data": null,
+  "error": "Task not found"
 }
 ```
 
@@ -600,7 +624,9 @@ Unexpected Error
 
 ```json
 {
-  "message": "Internal server error"
+  "success": false,
+  "data": null,
+  "error": "Internal server error"
 }
 ```
 
