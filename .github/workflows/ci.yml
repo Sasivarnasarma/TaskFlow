@@ -15,7 +15,7 @@ jobs:
     name: Lint, Typecheck, Test & Build
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
 
     steps:
@@ -56,12 +56,26 @@ jobs:
       - name: Run Production Build (React SPA & Static Deployment)
         run: pnpm build
 
-      - name: Post or Update PR Summary Comment
-        if: github.event_name == 'pull_request' && (success() || failure())
+      - name: Render GitHub Job Summary
+        if: always()
+        run: |
+          STATUS_BADGE="${{ job.status == 'success' && '✅ Passed' || '❌ Failed' }}"
+          echo "### 🚀 TaskFlow CI Status Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Result | Command |" >> $GITHUB_STEP_SUMMARY
+          echo "| :--- | :---: | :--- |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Linter** | ${STATUS_BADGE} | \`pnpm lint\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Type Checker** | ${STATUS_BADGE} | \`pnpm typecheck\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Automated Tests** | ${STATUS_BADGE} | \`pnpm test\` (31 UI & API tests) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Production Build** | ${STATUS_BADGE} | \`pnpm build\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Overall Pipeline Status:** **${STATUS_BADGE}**" >> $GITHUB_STEP_SUMMARY
+
+      - name: Post PR or Commit Summary Comment
+        if: always()
         uses: actions/github-script@v7
         with:
           script: |
-            const { owner, repo, number } = context.issue;
             const isSuccess = '${{ job.status }}' === 'success';
             const statusBadge = isSuccess ? '✅ Passed' : '❌ Failed';
 
@@ -75,28 +89,24 @@ jobs:
             | **Production Build** | ${statusBadge} | \`pnpm build\` |
 
             **Overall Pipeline Status:** **${statusBadge}**
-            *Commit: \`${context.sha.substring(0, 7)}\` | Workflow Run: [#${context.runNumber}](${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId})*`;
+            *Commit: \`${context.sha.substring(0, 7)}\` | Workflow Run: [#${context.runNumber}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})*`;
 
-            const { data: comments } = await github.rest.issues.listComments({
-              owner,
-              repo,
-              issue_number: number,
-            });
+            if (context.eventName === 'pull_request') {
+              const { owner, repo, number } = context.issue;
+              const { data: comments } = await github.rest.issues.listComments({ owner, repo, issue_number: number });
+              const botComment = comments.find(c => c.body && c.body.includes('### 🚀 TaskFlow CI Status Report'));
 
-            const botComment = comments.find(c => c.body && c.body.includes('### 🚀 TaskFlow CI Status Report'));
-
-            if (botComment) {
-              await github.rest.issues.updateComment({
+              if (botComment) {
+                await github.rest.issues.updateComment({ owner, repo, comment_id: botComment.id, body: commentBody });
+              } else {
+                await github.rest.issues.createComment({ owner, repo, issue_number: number, body: commentBody });
+              }
+            } else if (context.eventName === 'push') {
+              const { owner, repo } = context.repo;
+              await github.rest.repos.createCommitComment({
                 owner,
                 repo,
-                comment_id: botComment.id,
-                body: commentBody,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number: number,
+                commit_sha: context.sha,
                 body: commentBody,
               });
             }
