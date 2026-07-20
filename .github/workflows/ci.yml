@@ -2,7 +2,7 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [dev, main]
+    branches: [dev]
   pull_request:
     branches: [dev, main]
 
@@ -11,102 +11,130 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  ci:
-    name: Lint, Typecheck, Test & Build
+  lint:
+    name: Linter (Oxlint & Ruff)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup
+
+      - name: Run Linter
+        run: pnpm lint
+
+  typecheck:
+    name: Type Checker (tsc & Pyright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup
+
+      - name: Run Type Checkers
+        run: pnpm typecheck
+
+  test:
+    name: Automated Tests (Vitest & Pytest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup
+
+      - name: Run Test Suites
+        run: pnpm test
+
+  build:
+    name: Production Build (Vite & Static Deploy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup
+
+      - name: Run Production Build
+        run: pnpm build
+
+  report:
+    name: CI Summary & PR Comment
+    needs: [lint, typecheck, test, build]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
-      contents: write
+      contents: read
       pull-requests: write
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - name: Setup Node.js Environment
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'pnpm'
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v5
-
-      - name: Install Monorepo Dependencies
-        run: pnpm install
-
-      - name: Run Linter (Oxlint & Ruff)
-        run: pnpm lint
-
-      - name: Run Type Checkers (tsc & Pyright)
-        run: pnpm typecheck
-
-      - name: Run Test Suites (Vitest UI & Pytest API)
-        run: pnpm test
-
-      - name: Run Production Build (React SPA & Static Deployment)
-        run: pnpm build
-
       - name: Render GitHub Job Summary
-        if: always()
         run: |
-          STATUS_BADGE="${{ job.status == 'success' && '✅ Passed' || '❌ Failed' }}"
+          LINT_STATUS="${{ needs.lint.result == 'success' && '✅ Passed' || '❌ Failed' }}"
+          TYPE_STATUS="${{ needs.typecheck.result == 'success' && '✅ Passed' || '❌ Failed' }}"
+          TEST_STATUS="${{ needs.test.result == 'success' && '✅ Passed' || '❌ Failed' }}"
+          BUILD_STATUS="${{ needs.build.result == 'success' && '✅ Passed' || '❌ Failed' }}"
+          OVERALL_STATUS="${{ (needs.lint.result == 'success' && needs.typecheck.result == 'success' && needs.test.result == 'success' && needs.build.result == 'success') && '✅ Passed' || '❌ Failed' }}"
+
           echo "### 🚀 TaskFlow CI Status Report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Check | Result | Command |" >> $GITHUB_STEP_SUMMARY
           echo "| :--- | :---: | :--- |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Linter** | ${STATUS_BADGE} | \`pnpm lint\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Type Checker** | ${STATUS_BADGE} | \`pnpm typecheck\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Automated Tests** | ${STATUS_BADGE} | \`pnpm test\` (31 UI & API tests) |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Production Build** | ${STATUS_BADGE} | \`pnpm build\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Linter** | ${LINT_STATUS} | \`pnpm lint\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Type Checker** | ${TYPE_STATUS} | \`pnpm typecheck\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Automated Tests** | ${TEST_STATUS} | \`pnpm test\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Production Build** | ${BUILD_STATUS} | \`pnpm build\` |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Overall Pipeline Status:** **${STATUS_BADGE}**" >> $GITHUB_STEP_SUMMARY
+          echo "**Overall Pipeline Status:** **${OVERALL_STATUS}**" >> $GITHUB_STEP_SUMMARY
 
-      - name: Post PR or Commit Summary Comment
-        if: always()
+      - name: Post or Update PR Summary Comment
+        if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
-            const isSuccess = '${{ job.status }}' === 'success';
-            const statusBadge = isSuccess ? '✅ Passed' : '❌ Failed';
+            const lintStatus = '${{ needs.lint.result }}' === 'success' ? '✅ Passed' : '❌ Failed';
+            const typeStatus = '${{ needs.typecheck.result }}' === 'success' ? '✅ Passed' : '❌ Failed';
+            const testStatus = '${{ needs.test.result }}' === 'success' ? '✅ Passed' : '❌ Failed';
+            const buildStatus = '${{ needs.build.result }}' === 'success' ? '✅ Passed' : '❌ Failed';
+            const isSuccess =
+              '${{ needs.lint.result }}' === 'success' &&
+              '${{ needs.typecheck.result }}' === 'success' &&
+              '${{ needs.test.result }}' === 'success' &&
+              '${{ needs.build.result }}' === 'success';
+            const overallStatus = isSuccess ? '✅ Passed' : '❌ Failed';
+
+            const { owner, repo, number } = context.issue;
+            const { data: comments } = await github.rest.issues.listComments({ owner, repo, issue_number: number });
+            const botComment = comments.find(c => c.body && c.body.includes('### 🚀 TaskFlow CI Status Report'));
+            const actionText = botComment ? 'Updated' : 'Created';
 
             const commentBody = `### 🚀 TaskFlow CI Status Report
 
             | Check | Result | Command |
             | :--- | :---: | :--- |
-            | **Linter** | ${statusBadge} | \`pnpm lint\` |
-            | **Type Checker** | ${statusBadge} | \`pnpm typecheck\` |
-            | **Automated Tests** | ${statusBadge} | \`pnpm test\` (31 UI & API tests) |
-            | **Production Build** | ${statusBadge} | \`pnpm build\` |
+            | **Linter** | ${lintStatus} | \`pnpm lint\` |
+            | **Type Checker** | ${typeStatus} | \`pnpm typecheck\` |
+            | **Automated Tests** | ${testStatus} | \`pnpm test\` |
+            | **Production Build** | ${buildStatus} | \`pnpm build\` |
 
-            **Overall Pipeline Status:** **${statusBadge}**
-            *Commit: \`${context.sha.substring(0, 7)}\` | Workflow Run: [#${context.runNumber}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})*`;
+            **Overall Pipeline Status:** **${overallStatus}**
+            *Comment ${actionText} | Commit: \`${context.sha.substring(0, 7)}\` | Workflow Run: [#${context.runNumber}](${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId})*`;
 
-            if (context.eventName === 'pull_request') {
-              const { owner, repo, number } = context.issue;
-              const { data: comments } = await github.rest.issues.listComments({ owner, repo, issue_number: number });
-              const botComment = comments.find(c => c.body && c.body.includes('### 🚀 TaskFlow CI Status Report'));
-
-              if (botComment) {
-                await github.rest.issues.updateComment({ owner, repo, comment_id: botComment.id, body: commentBody });
-              } else {
-                await github.rest.issues.createComment({ owner, repo, issue_number: number, body: commentBody });
-              }
-            } else if (context.eventName === 'push') {
-              const { owner, repo } = context.repo;
-              await github.rest.repos.createCommitComment({
-                owner,
-                repo,
-                commit_sha: context.sha,
-                body: commentBody,
-              });
+            if (botComment) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: botComment.id, body: commentBody });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number: number, body: commentBody });
             }
