@@ -1,0 +1,102 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: Lint, Typecheck, Test & Build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install Monorepo Dependencies
+        run: pnpm install
+
+      - name: Run Linter (Oxlint & Ruff)
+        run: pnpm lint
+
+      - name: Run Type Checkers (tsc & Pyright)
+        run: pnpm typecheck
+
+      - name: Run Test Suites (Vitest UI & Pytest API)
+        run: pnpm test
+
+      - name: Run Production Build (React SPA & Static Deployment)
+        run: pnpm build
+
+      - name: Post or Update PR Summary Comment
+        if: github.event_name == 'pull_request' && (success() || failure())
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo, number } = context.issue;
+            const isSuccess = '${{ job.status }}' === 'success';
+            const statusBadge = isSuccess ? '✅ Passed' : '❌ Failed';
+
+            const commentBody = `### 🚀 TaskFlow CI Status Report
+
+            | Check | Result | Command |
+            | :--- | :---: | :--- |
+            | **Linter** | ${statusBadge} | \`pnpm lint\` |
+            | **Type Checker** | ${statusBadge} | \`pnpm typecheck\` |
+            | **Automated Tests** | ${statusBadge} | \`pnpm test\` (31 UI & API tests) |
+            | **Production Build** | ${statusBadge} | \`pnpm build\` |
+
+            **Overall Pipeline Status:** **${statusBadge}**
+            *Commit: \`${context.sha.substring(0, 7)}\` | Workflow Run: [#${context.runNumber}](${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId})*`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: number,
+            });
+
+            const botComment = comments.find(c => c.body && c.body.includes('### 🚀 TaskFlow CI Status Report'));
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: botComment.id,
+                body: commentBody,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: number,
+                body: commentBody,
+              });
+            }
