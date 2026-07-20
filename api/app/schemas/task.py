@@ -8,7 +8,7 @@ from app.models.task import TaskPriority, TaskStatus
 
 class TaskBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=150)
-    description: str | None = Field(None, max_length=1000)
+    description: str | None = Field(default=None, max_length=1000)
     priority: TaskPriority = TaskPriority.LOW
     status: TaskStatus = TaskStatus.TODO
 
@@ -17,15 +17,15 @@ class TaskBase(BaseModel):
 
 class TaskCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=150)
-    description: str | None = Field(None, max_length=1000)
+    description: str | None = Field(default=None, max_length=1000)
     priority: TaskPriority | None = TaskPriority.LOW
 
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
 
 class TaskUpdate(BaseModel):
-    title: str | None = Field(None, min_length=1, max_length=150)
-    description: str | None = Field(None, max_length=1000)
+    title: str | None = Field(default=None, min_length=1, max_length=150)
+    description: str | None = Field(default=None, max_length=1000)
     priority: TaskPriority | None = None
     status: TaskStatus | None = None
 

@@ -38,3 +38,7 @@ select = [
 ignore = [
     "B008",  # Do not perform function call `Depends` in argument defaults
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
