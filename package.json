@@ -7,8 +7,7 @@
     "lint": "concurrently -n ui,api -c blue,green \"pnpm --filter ui lint\" \"uv run --directory api ruff check .\"",
     "format": "concurrently -n ui,api -c blue,green \"pnpm --filter ui format\" \"uv run --directory api ruff format . && uv run --directory api ruff check --fix .\"",
     "typecheck": "concurrently -n ui,api -c blue,green \"pnpm --filter ui typecheck\" \"uv run --directory api pyright .\"",
-    "test:api": "uv run --directory api pytest",
-    "test": "pnpm test:api",
+    "test": "concurrently -n ui,api -c blue,green \"pnpm --filter ui test\" \"uv run --directory api pytest\"",
     "build": "node scripts/build.js"
   },
   "devDependencies": {
