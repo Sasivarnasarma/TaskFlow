@@ -1,32 +1,56 @@
-# React + TypeScript + Vite
+# TaskFlow UI Frontend ⚛️
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+The frontend application for TaskFlow, built with **React 19**, **TypeScript**, **Vite 8**, **Tailwind CSS v4**, **Shadcn/UI**, and **Vitest**.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🛠️ Tech Stack & Architecture
 
-## React Compiler
+* **Framework:** React 19 & TypeScript
+* **Build Tool:** Vite 8
+* **Styling:** Tailwind CSS v4, Glassmorphism design system, Lucide Icons
+* **UI Components:** Radix UI primitives, Sonner toasts, Dark/Light/System theme provider
+* **Testing:** Vitest, `@testing-library/react`, `jsdom`
+* **Linter & Formatter:** Oxlint & Prettier
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the Oxlint configuration
+## 📁 Project Structure
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```
+ui/
+├── src/
+│   ├── components/     # Reusable UI components (TaskCard, CreateModal, DeleteModal, Header, Filters)
+│   ├── pages/          # Application views (Dashboard)
+│   ├── lib/            # Utilities & API client wrapper (api.ts, utils.ts, theme-provider.tsx)
+│   ├── types/          # TypeScript interfaces (Task, TaskStatistics, FilterOptions)
+│   └── test/           # Vitest setup & mocks (setup.ts)
+├── vite.config.ts      # Vite build & Vitest test configuration
+└── package.json        # Dependencies & scripts
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+---
+
+## 🚀 Independent Execution
+
+Run commands directly from the `ui/` directory:
+
+```bash
+# Install dependencies
+pnpm install
+
+# Start Vite dev server (port 5173)
+pnpm dev
+
+# Run Vitest test suite (15 tests)
+pnpm test
+
+# Run Oxlint linter
+pnpm lint
+
+# Run TypeScript compiler typecheck
+pnpm typecheck
+
+# Build Vite production bundle (dist/)
+pnpm build
+```

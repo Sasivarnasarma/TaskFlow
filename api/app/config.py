@@ -9,10 +9,10 @@ class Settings(BaseSettings):
     # We will serve the static files from this directory in production
     STATIC_DIR: str = "app/static"
 
-    # SQLite Database URL
-    DATABASE_URL: str = "sqlite:///./tasks.db"
+    # Default Database URL (SQLite, PostgreSQL, MySQL)
+    DATABASE_URL: str = "sqlite:///./taskflow.db"
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=(".env", "../.env"), extra="ignore")
 
 
 settings = Settings()
