@@ -173,7 +173,7 @@ All API endpoints return enveloped JSON structures: `{"success": true, "data": .
 | :--- | :--- | :--- |
 | `DATABASE_URL` | `sqlite:///./taskflow.db` | SQLAlchemy database connection string (SQLite, PostgreSQL, MySQL). |
 | `CORS_ORIGINS` | `["*"]` | Allowed origins list for CORS middleware. |
-| `VITE_API_URL` | `http://localhost:8000` | Optional React API target URL (defaults to `/api` proxy or dev server). |
+| `VITE_DEV_API_URL` | `http://127.0.0.1:8000` | Vite dev-server proxy target (development only); production uses relative `/api` URLs. |
 | `HOST_IP` | `0.0.0.0` | Host IP interface binding for Docker Compose. |
 | `HOST_PORT` | `5279` | Host port mapping for Docker Compose. |
 
@@ -181,4 +181,4 @@ All API endpoints return enveloped JSON structures: `{"success": true, "data": .
 
 ## 📄 License
 
-Distributed under the MIT License. See [LICENSE](file:///c:/Users/sasiv/Desktop/Projects/TaskFlow/LICENSE) for details.
+Distributed under the MIT License. See [LICENSE](LICENSE) for details.

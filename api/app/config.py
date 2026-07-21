@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -7,7 +9,7 @@ class Settings(BaseSettings):
     CORS_ORIGINS: list[str] = ["http://localhost:5173"]  # React Dev server
 
     # We will serve the static files from this directory in production
-    STATIC_DIR: str = "app/static"
+    STATIC_DIR: str = str(Path(__file__).resolve().parent / "static")
 
     # Default Database URL (SQLite, PostgreSQL, MySQL)
     DATABASE_URL: str = "sqlite:///./taskflow.db"

@@ -12,10 +12,12 @@ from app.database.base import Base
 from app.database.engine import engine
 from app.routers import health, statistics, tasks
 
-# Auto-create tables in SQLite database
-Base.metadata.create_all(bind=engine)
-
 app = FastAPI(title=settings.PROJECT_NAME)
+
+# Auto-create tables in SQLite database on startup
+@app.on_event("startup")
+def _create_tables() -> None:
+    Base.metadata.create_all(bind=engine)
 
 
 # Custom HTTP Exception handler to return enveloped {"success": false, "data": null, "error": "..."}
