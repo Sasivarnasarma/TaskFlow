@@ -2,7 +2,15 @@
   "name": "taskflow-root",
   "private": true,
   "scripts": {
-    "dev:ui": "pnpm --filter ui dev",
-    "build:ui": "pnpm --filter ui build"
+    "prepare": "node scripts/prepare.js && uv sync --directory api",
+    "dev": "concurrently -n ui,api -c blue,green \"pnpm --filter ui dev\" \"uv run --directory api uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload\"",
+    "lint": "concurrently -n ui,api -c blue,green \"pnpm --filter ui lint\" \"uv run --directory api ruff check .\"",
+    "format": "concurrently -n ui,api -c blue,green \"pnpm --filter ui format\" \"uv run --directory api ruff format . && uv run --directory api ruff check --fix .\"",
+    "typecheck": "concurrently -n ui,api -c blue,green \"pnpm --filter ui typecheck\" \"uv run --directory api pyright .\"",
+    "test": "concurrently -n ui,api -c blue,green \"pnpm --filter ui test\" \"uv run --directory api pytest\"",
+    "build": "node scripts/build.js"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.3"
   }
 }
