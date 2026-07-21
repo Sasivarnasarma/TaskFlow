@@ -1,0 +1,12 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: taskflow-app
+    env_file:
+      - path: .env
+        required: false
+    ports:
+      - "${HOST_IP:-0.0.0.0}:${HOST_PORT:-5279}:5279"
+    restart: unless-stopped
