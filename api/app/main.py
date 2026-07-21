@@ -1,4 +1,6 @@
 import os
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
@@ -12,12 +14,14 @@ from app.database.base import Base
 from app.database.engine import engine
 from app.routers import health, statistics, tasks
 
-app = FastAPI(title=settings.PROJECT_NAME)
 
-# Auto-create tables in SQLite database on startup
-@app.on_event("startup")
-def _create_tables() -> None:
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     Base.metadata.create_all(bind=engine)
+    yield
+
+
+app = FastAPI(title=settings.PROJECT_NAME, lifespan=lifespan)
 
 
 # Custom HTTP Exception handler to return enveloped {"success": false, "data": null, "error": "..."}
