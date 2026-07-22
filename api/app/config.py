@@ -29,6 +29,12 @@ class Settings(BaseSettings):
     # Default Database URL (SQLite, PostgreSQL, MySQL)
     DATABASE_URL: str = "sqlite:///./taskflow.db"
 
+    # User Authentication & Session settings
+    ALLOW_REGISTRATION: bool = True
+    JWT_SECRET_KEY: str = "super-secret-jwt-key-taskflow-change-in-prod"
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+
     model_config = SettingsConfigDict(env_file=(".env", "../.env"), extra="ignore")
 
 

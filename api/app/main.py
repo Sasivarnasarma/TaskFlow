@@ -12,7 +12,7 @@ import app.models  # Register models for table creation
 from app.config import settings
 from app.database.base import Base
 from app.database.engine import engine
-from app.routers import health, statistics, tasks
+from app.routers import auth, health, statistics, tasks
 
 
 @asynccontextmanager
@@ -63,6 +63,7 @@ app.add_middleware(
 
 # API routes
 app.include_router(health.router, prefix=settings.API_PREFIX)
+app.include_router(auth.router, prefix=settings.API_PREFIX)
 app.include_router(tasks.router, prefix=settings.API_PREFIX)
 app.include_router(statistics.router, prefix=settings.API_PREFIX)
 
