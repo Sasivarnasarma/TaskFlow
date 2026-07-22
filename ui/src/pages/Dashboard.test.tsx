@@ -59,7 +59,7 @@ describe('Dashboard Component', () => {
       expect(screen.getByText('Second Test Task')).toBeInTheDocument()
     })
 
-    expect(screen.getByText('50%')).toBeInTheDocument()
+    expect(screen.getAllByText('50%')[0]).toBeInTheDocument()
     expect(screen.getByText('Total Tasks')).toBeInTheDocument()
   })
 
@@ -117,7 +117,7 @@ describe('Dashboard Component', () => {
         description: 'New Description',
         priority: 'LOW',
       })
-      expect(screen.getByText(/Task created successfully/i)).toBeInTheDocument()
+      expect(screen.getByText(/Task #3 created successfully/i)).toBeInTheDocument()
     })
   })
 
@@ -139,7 +139,7 @@ describe('Dashboard Component', () => {
 
     await waitFor(() => {
       expect(api.updateTask).toHaveBeenCalledWith(1, { status: 'IN_PROGRESS' })
-      expect(screen.getByText(/Task moved to In Progress/i)).toBeInTheDocument()
+      expect(screen.getByText(/Task #1 moved to In Progress/i)).toBeInTheDocument()
     })
   })
 
@@ -159,13 +159,47 @@ describe('Dashboard Component', () => {
     expect(screen.getByText(/Delete Task\?/i)).toBeInTheDocument()
     expect(screen.getByText(/Are you sure you want to delete the task/i)).toBeInTheDocument()
 
+    // Start fake timers just before confirmation action
+    vi.useFakeTimers()
+
     // Confirm deletion
     const confirmDeleteBtn = screen.getByRole('button', { name: 'Delete Task' })
     fireEvent.click(confirmDeleteBtn)
 
+    // Verify the optimistic bottom bar shows up immediately
+    expect(screen.getByText(/Deleting "First Test Task".../i)).toBeInTheDocument()
+
+    // Fast-forward fake timers by 5 seconds
+    vi.advanceTimersByTime(5000)
+
+    // Restore real timers so waitFor can run normally
+    vi.useRealTimers()
+
     await waitFor(() => {
       expect(api.deleteTask).toHaveBeenCalledWith(1)
-      expect(screen.getByText(/Task deleted successfully/i)).toBeInTheDocument()
+      expect(screen.getByText(/Task #1 deleted successfully/i)).toBeInTheDocument()
     })
+  })
+
+  it('opens create modal with prefilled details on task duplicate button click', async () => {
+    render(<Dashboard />)
+
+    await waitFor(() => {
+      expect(screen.getByText('First Test Task')).toBeInTheDocument()
+    })
+
+    // Click duplicate button on first task
+    const duplicateButton = screen.getAllByTitle('Duplicate task')[0]
+    fireEvent.click(duplicateButton)
+
+    // Form modal should open
+    expect(screen.getByText('Create New Task')).toBeInTheDocument()
+
+    // Title and description inputs should be prefilled
+    const titleInput = screen.getByLabelText(/Title \*/i) as HTMLInputElement
+    const descInput = screen.getByLabelText(/Description/i) as HTMLTextAreaElement
+
+    expect(titleInput.value).toBe('First Test Task (Copy)')
+    expect(descInput.value).toBe('First description')
   })
 })

@@ -1,5 +1,6 @@
 {
   "name": "taskflow-root",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "prepare": "node scripts/prepare.js && uv sync --directory api",

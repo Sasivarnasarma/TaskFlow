@@ -1,10 +1,20 @@
-import { Outlet, Link, useLocation } from 'react-router-dom'
-import { Sun, Moon, CheckSquare, LayoutDashboard } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Outlet } from 'react-router-dom'
+import { Sun, Moon, CheckSquare, Heart } from 'lucide-react'
 import { useTheme } from '../lib/theme-provider'
+import { api } from '../lib/api'
 
 export default function MainLayout() {
   const { theme, setTheme } = useTheme()
-  const location = useLocation()
+  const [apiVersion, setApiVersion] = useState<string | null>(null)
+  const appVersion = import.meta.env.VITE_APP_VERSION || '0.0.0'
+
+  useEffect(() => {
+    api
+      .getVersion()
+      .then((data) => setApiVersion(data?.version || null))
+      .catch(() => setApiVersion(null))
+  }, [])
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-200">
@@ -27,28 +37,39 @@ export default function MainLayout() {
         </div>
       </header>
 
-      {/* Main Container */}
-      <div className="flex flex-1 container">
-        {/* Sidebar (Desktop only) */}
-        <aside className="hidden md:flex w-64 flex-col border-r border-border py-6 pr-4 gap-2">
-          <Link
-            to="/"
-            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              location.pathname === '/'
-                ? 'bg-secondary text-foreground'
-                : 'text-muted-foreground hover:bg-secondary/50'
-            }`}
-          >
-            <LayoutDashboard className="h-4 w-4" />
-            <span>Dashboard</span>
-          </Link>
-        </aside>
+      {/* Main Content */}
+      <main className="flex-1 container py-6">
+        <Outlet />
+      </main>
 
-        {/* Content Panel */}
-        <main className="flex-1 py-6 md:pl-6">
-          <Outlet />
-        </main>
-      </div>
+      {/* Footer */}
+      <footer className="w-full border-t border-border py-4 bg-card/50 text-xs text-muted-foreground">
+        <div className="container flex flex-col sm:flex-row items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-foreground">TaskFlow</span>
+            <span className="inline-flex items-center gap-1.5 bg-secondary text-secondary-foreground px-2 py-0.5 rounded-md text-[11px] font-mono border border-border">
+              <span>UI v{appVersion}</span>
+              {apiVersion && (
+                <>
+                  <span className="opacity-40">•</span>
+                  <span>API v{apiVersion}</span>
+                </>
+              )}
+            </span>
+          </div>
+
+          <a
+            href="https://github.com/Sasivarnasarma/TaskFlow"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+          >
+            <span>Developed with</span>
+            <Heart className="h-3.5 w-3.5 text-red-500 fill-red-500 animate-pulse" />
+            <span>by Sasivarnasarma</span>
+          </a>
+        </div>
+      </footer>
     </div>
   )
 }

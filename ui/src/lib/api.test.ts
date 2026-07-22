@@ -116,6 +116,34 @@ describe('API Client Functions', () => {
     expect(result).toEqual(statsData)
   })
 
+  it('api.getHealth fetches health status and returns response', async () => {
+    const healthData = { status: 'ok', version: '1.0.0' }
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ success: true, data: healthData, error: null }),
+    } as Response)
+
+    const result = await api.getHealth()
+
+    expect(fetchSpy).toHaveBeenCalledWith('/api/health', expect.any(Object))
+    expect(result).toEqual(healthData)
+  })
+
+  it('api.getVersion fetches API version and returns response', async () => {
+    const versionData = { version: '1.0.0' }
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ success: true, data: versionData, error: null }),
+    } as Response)
+
+    const result = await api.getVersion()
+
+    expect(fetchSpy).toHaveBeenCalledWith('/api/version', expect.any(Object))
+    expect(result).toEqual(versionData)
+  })
+
   it('throws Error when API response success is false', async () => {
     vi.spyOn(global, 'fetch').mockResolvedValueOnce({
       ok: false,

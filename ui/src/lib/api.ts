@@ -83,4 +83,8 @@ export const api = {
     request<{ total: number; completed: number; pending: number; completionRate: number }>(
       '/statistics'
     ),
+
+  getHealth: () => request<{ status: string; version: string }>('/health'),
+
+  getVersion: () => request<{ version: string }>('/version'),
 }
