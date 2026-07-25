@@ -3,8 +3,8 @@ from httpx import AsyncClient
 
 
 @pytest.mark.anyio
-async def test_get_statistics_empty_database(async_client: AsyncClient):
-    response = await async_client.get("/api/statistics")
+async def test_get_statistics_empty_database(auth_client: AsyncClient):
+    response = await auth_client.get("/api/statistics")
     assert response.status_code == 200
     body = response.json()
     assert body["success"] is True
@@ -18,18 +18,18 @@ async def test_get_statistics_empty_database(async_client: AsyncClient):
 
 
 @pytest.mark.anyio
-async def test_get_statistics_calculated(async_client: AsyncClient):
+async def test_get_statistics_calculated(auth_client: AsyncClient):
     # Create 1 TODO, 1 IN_PROGRESS, 1 DONE task
-    await async_client.post("/api/tasks", json={"title": "Task 1"})
-    res2 = await async_client.post("/api/tasks", json={"title": "Task 2"})
+    await auth_client.post("/api/tasks", json={"title": "Task 1"})
+    res2 = await auth_client.post("/api/tasks", json={"title": "Task 2"})
     t2 = res2.json()["data"]["id"]
-    res3 = await async_client.post("/api/tasks", json={"title": "Task 3"})
+    res3 = await auth_client.post("/api/tasks", json={"title": "Task 3"})
     t3 = res3.json()["data"]["id"]
 
-    await async_client.put(f"/api/tasks/{t2}", json={"status": "IN_PROGRESS"})
-    await async_client.put(f"/api/tasks/{t3}", json={"status": "DONE"})
+    await auth_client.put(f"/api/tasks/{t2}", json={"status": "IN_PROGRESS"})
+    await auth_client.put(f"/api/tasks/{t3}", json={"status": "DONE"})
 
-    response = await async_client.get("/api/statistics")
+    response = await auth_client.get("/api/statistics")
     assert response.status_code == 200
     data = response.json()["data"]
 
