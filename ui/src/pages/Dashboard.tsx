@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   Circle,
   CircleDot,
+  Calendar,
 } from 'lucide-react'
 
 interface ToastAction {
@@ -64,6 +65,7 @@ export default function Dashboard() {
   const [newTitle, setNewTitle] = useState('')
   const [newDescription, setNewDescription] = useState('')
   const [newPriority, setNewPriority] = useState('LOW')
+  const [newDueDate, setNewDueDate] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
@@ -73,6 +75,7 @@ export default function Dashboard() {
   const [editDescription, setEditDescription] = useState('')
   const [editPriority, setEditPriority] = useState<'LOW' | 'MEDIUM' | 'HIGH'>('LOW')
   const [editStatus, setEditStatus] = useState<'TODO' | 'IN_PROGRESS' | 'DONE'>('TODO')
+  const [editDueDate, setEditDueDate] = useState('')
   const [updating, setUpdating] = useState(false)
   const [editError, setEditError] = useState<string | null>(null)
 
@@ -244,10 +247,12 @@ export default function Dashboard() {
         title: newTitle.trim(),
         description: newDescription.trim() || undefined,
         priority: newPriority,
+        dueDate: newDueDate ? new Date(newDueDate).toISOString() : null,
       })
       setNewTitle('')
       setNewDescription('')
       setNewPriority('LOW')
+      setNewDueDate('')
       setShowCreateForm(false)
       showToast(`Task #${created.id} created successfully`)
       fetchTasks()
@@ -265,6 +270,7 @@ export default function Dashboard() {
     setEditDescription(task.description || '')
     setEditPriority(task.priority)
     setEditStatus(task.status)
+    setEditDueDate(task.dueDate ? task.dueDate.substring(0, 16) : '')
     setEditError(null)
   }
 
@@ -294,6 +300,7 @@ export default function Dashboard() {
         description: editDescription.trim() || undefined,
         priority: editPriority,
         status: editStatus,
+        dueDate: editDueDate ? new Date(editDueDate).toISOString() : null,
       })
       const statusChanged = taskToEdit.status !== editStatus
       setTasks((prev) => prev.map((t) => (t.id === taskToEdit.id ? updated : t)))
@@ -349,6 +356,7 @@ export default function Dashboard() {
     setNewTitle(`${task.title} (Copy)`)
     setNewDescription(task.description || '')
     setNewPriority(task.priority)
+    setNewDueDate(task.dueDate ? task.dueDate.substring(0, 16) : '')
     setFormError(null)
     setShowCreateForm(true)
   }
@@ -385,6 +393,19 @@ export default function Dashboard() {
     }
   }
 
+  // Format due date helper
+  const formatDueDate = (dateStr: string | null) => {
+    if (!dateStr) return null
+    const d = new Date(dateStr)
+    return d.toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    })
+  }
+
   return (
     <div className="flex flex-col gap-6 relative">
       <style>{`
@@ -400,6 +421,26 @@ export default function Dashboard() {
           100% {
             transform: translateY(0%);
             opacity: 1;
+          }
+        }
+        @keyframes glow-overdue {
+          0%, 100% {
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.35);
+          }
+          50% {
+            box-shadow: 0 0 16px rgba(239, 68, 68, 0.35);
+            border-color: rgba(239, 68, 68, 0.65);
+          }
+        }
+        @keyframes glow-due-soon {
+          0%, 100% {
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.15);
+            border-color: rgba(245, 158, 11, 0.35);
+          }
+          50% {
+            box-shadow: 0 0 16px rgba(245, 158, 11, 0.35);
+            border-color: rgba(245, 158, 11, 0.65);
           }
         }
       `}</style>
@@ -645,6 +686,34 @@ export default function Dashboard() {
               </div>
             </div>
 
+            <div className="flex flex-col gap-1.5 mt-3">
+              <label
+                htmlFor="edit-due-date"
+                className="text-xs font-semibold text-muted-foreground"
+              >
+                Due Date
+              </label>
+              <div className="flex gap-2 items-center">
+                <input
+                  type="datetime-local"
+                  id="edit-due-date"
+                  value={editDueDate}
+                  onChange={(e) => setEditDueDate(e.target.value)}
+                  className="flex-1 px-3 py-2 border border-border rounded-lg bg-card text-sm focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
+                  disabled={updating}
+                />
+                {editDueDate && (
+                  <button
+                    type="button"
+                    onClick={() => setEditDueDate('')}
+                    className="px-3 py-2 text-xs border border-border hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+
             <div className="flex gap-3 justify-end mt-4">
               <button
                 type="button"
@@ -807,6 +876,34 @@ export default function Dashboard() {
               </select>
             </div>
 
+            <div className="flex flex-col gap-1.5 mt-1">
+              <label
+                htmlFor="create-due-date"
+                className="text-xs font-semibold text-muted-foreground"
+              >
+                Due Date
+              </label>
+              <div className="flex gap-2 items-center">
+                <input
+                  type="datetime-local"
+                  id="create-due-date"
+                  value={newDueDate}
+                  onChange={(e) => setNewDueDate(e.target.value)}
+                  className="flex-1 px-3 py-2 border border-border rounded-lg bg-card text-sm focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
+                  disabled={submitting}
+                />
+                {newDueDate && (
+                  <button
+                    type="button"
+                    onClick={() => setNewDueDate('')}
+                    className="px-3 py-2 text-xs border border-border hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+
             <div className="flex gap-3 justify-end mt-4">
               <button
                 type="button"
@@ -910,6 +1007,12 @@ export default function Dashboard() {
             </option>
             <option value="priority" className="bg-popover text-popover-foreground">
               Priority Rank
+            </option>
+            <option value="due_date_asc" className="bg-popover text-popover-foreground">
+              Due Date: Soonest
+            </option>
+            <option value="due_date_desc" className="bg-popover text-popover-foreground">
+              Due Date: Latest
             </option>
           </select>
 
@@ -1023,26 +1126,54 @@ export default function Dashboard() {
             const isDone = task.status === 'DONE'
             const isInProgress = task.status === 'IN_PROGRESS'
 
+            const isOverdue = !isDone && task.dueDate && new Date(task.dueDate) < new Date()
+            const isDueSoon =
+              !isDone &&
+              !isOverdue &&
+              task.dueDate &&
+              (() => {
+                const diff = new Date(task.dueDate).getTime() - new Date().getTime()
+                return diff > 0 && diff <= 24 * 60 * 60 * 1000
+              })()
+
             return (
               <div
                 key={task.id}
                 className={`group rounded-xl border p-5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md flex flex-col justify-between ${
-                  isDone ? 'bg-card/50 border-border/60' : 'bg-card border-border'
+                  isDone
+                    ? 'bg-card/50 border-border/60'
+                    : isOverdue
+                      ? 'bg-card border-red-500/40 shadow-[0_0_12px_rgba(239,68,68,0.12)] animate-[glow-overdue_2s_infinite]'
+                      : isDueSoon
+                        ? 'bg-card border-amber-500/40 shadow-[0_0_12px_rgba(245,158,11,0.12)] animate-[glow-due-soon_2s_infinite]'
+                        : 'bg-card border-border'
                 }`}
               >
                 <div className="flex flex-col gap-2">
                   {/* Badges row */}
                   <div className="flex justify-between items-center">
-                    <span
-                      className={`text-[10px] font-semibold border px-2 py-0.5 rounded-full ${getPriorityColor(task.priority)}`}
-                    >
-                      {task.priority}
-                    </span>
-                    <span
-                      className={`text-[10px] font-semibold border px-2 py-0.5 rounded-full ${getStatusColor(task.status)}`}
-                    >
-                      {task.status.replace('_', ' ')}
-                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span
+                        className={`text-[10px] font-semibold border px-2 py-0.5 rounded-full ${getPriorityColor(task.priority)}`}
+                      >
+                        {task.priority}
+                      </span>
+                      <span
+                        className={`text-[10px] font-semibold border px-2 py-0.5 rounded-full ${getStatusColor(task.status)}`}
+                      >
+                        {task.status.replace('_', ' ')}
+                      </span>
+                    </div>
+                    {isOverdue && (
+                      <span className="text-[10px] font-bold border border-red-500/30 bg-red-500/10 text-red-500 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0 animate-pulse">
+                        ⚠️ Overdue
+                      </span>
+                    )}
+                    {isDueSoon && (
+                      <span className="text-[10px] font-bold border border-amber-500/30 bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0 animate-pulse">
+                        ⏱️ Due Soon
+                      </span>
+                    )}
                   </div>
 
                   {/* Title & Actions row */}
@@ -1125,6 +1256,24 @@ export default function Dashboard() {
                     >
                       {task.description}
                     </p>
+                  )}
+
+                  {/* Due Date Indicator */}
+                  {task.dueDate && (
+                    <div
+                      className={`flex items-center gap-1.5 text-xs mt-3.5 ${
+                        isDone
+                          ? 'text-muted-foreground/40 line-through'
+                          : isOverdue
+                            ? 'text-red-500 font-semibold'
+                            : isDueSoon
+                              ? 'text-amber-500 font-semibold'
+                              : 'text-muted-foreground/80'
+                      }`}
+                    >
+                      <Calendar className="h-3.5 w-3.5 shrink-0" />
+                      <span>Due: {formatDueDate(task.dueDate)}</span>
+                    </div>
                   )}
                 </div>
 

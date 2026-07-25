@@ -6,6 +6,7 @@ export interface Task {
   description: string | null
   priority: 'LOW' | 'MEDIUM' | 'HIGH'
   status: 'TODO' | 'IN_PROGRESS' | 'DONE'
+  dueDate?: string | null
   createdAt: string
   updatedAt: string
 }
@@ -128,7 +129,12 @@ export const api = {
 
   getTaskById: (id: number) => request<Task>(`/tasks/${id}`),
 
-  createTask: (data: { title: string; description?: string; priority?: string }) =>
+  createTask: (data: {
+    title: string
+    description?: string
+    priority?: string
+    dueDate?: string | null
+  }) =>
     request<Task>('/tasks', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -136,7 +142,13 @@ export const api = {
 
   updateTask: (
     id: number,
-    data: { title?: string; description?: string; priority?: string; status?: string }
+    data: {
+      title?: string
+      description?: string
+      priority?: string
+      status?: string
+      dueDate?: string | null
+    }
   ) =>
     request<Task>(`/tasks/${id}`, {
       method: 'PUT',

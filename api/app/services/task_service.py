@@ -35,6 +35,7 @@ class TaskService:
             title=task_data.title.strip(),
             description=task_data.description,
             priority=task_data.priority.value if task_data.priority else "LOW",
+            due_date=task_data.due_date,
             user_id=user_id,
         )
         return self.repository.create(db, task)
@@ -42,20 +43,23 @@ class TaskService:
     def update_task(self, db: Session, task_id: int, task_data: TaskUpdate, user_id: int) -> Task:
         task = self.get_task_by_id(db, task_id, user_id)
 
-        updates = {}
-        if task_data.title is not None:
-            if not task_data.title.strip():
+        # Get only the fields explicitly provided in the request payload
+        updates = task_data.model_dump(exclude_unset=True)
+
+        if "title" in updates:
+            if updates["title"] is not None:
+                if not updates["title"].strip():
+                    raise HTTPException(status_code=422, detail="Title cannot be empty")
+                updates["title"] = updates["title"].strip()
+            else:
+                # If title is explicitly set to None, block it
                 raise HTTPException(status_code=422, detail="Title cannot be empty")
-            updates["title"] = task_data.title.strip()
 
-        if task_data.description is not None:
-            updates["description"] = task_data.description
+        if "priority" in updates and updates["priority"] is not None:
+            updates["priority"] = updates["priority"].value
 
-        if task_data.priority is not None:
-            updates["priority"] = task_data.priority.value
-
-        if task_data.status is not None:
-            updates["status"] = task_data.status.value
+        if "status" in updates and updates["status"] is not None:
+            updates["status"] = updates["status"].value
 
         return self.repository.update(db, task, updates)
 

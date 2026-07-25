@@ -36,6 +36,10 @@ class TaskRepository:
             query = query.order_by(Task.title.desc())
         elif sort == "priority":
             query = query.order_by(Task.priority.asc())
+        elif sort == "due_date_asc":
+            query = query.order_by(Task.due_date.asc().nulls_last())
+        elif sort == "due_date_desc":
+            query = query.order_by(Task.due_date.desc().nulls_last())
         else:
             query = query.order_by(Task.created_at.desc())
 
@@ -52,8 +56,7 @@ class TaskRepository:
 
     def update(self, db: Session, task: Task, updates: dict) -> Task:
         for key, value in updates.items():
-            if value is not None:
-                setattr(task, key, value)
+            setattr(task, key, value)
         db.commit()
         db.refresh(task)
         return task

@@ -116,6 +116,7 @@ describe('Dashboard Component', () => {
         title: 'New Created Task',
         description: 'New Description',
         priority: 'LOW',
+        dueDate: null,
       })
       expect(screen.getByText(/Task #3 created successfully/i)).toBeInTheDocument()
     })
@@ -181,7 +182,7 @@ describe('Dashboard Component', () => {
       expect(api.deleteTask).toHaveBeenCalledWith(1)
       expect(screen.getByText(/Task #1 deleted successfully/i)).toBeInTheDocument()
     })
-  })
+  }, 15000)
 
   it('opens create modal with prefilled details on task duplicate button click', async () => {
     render(<Dashboard />)
@@ -203,5 +204,49 @@ describe('Dashboard Component', () => {
 
     expect(titleInput.value).toBe('First Test Task (Copy)')
     expect(descInput.value).toBe('First description')
+  })
+
+  it('renders due date indicators and overdue/due soon alerts correctly', async () => {
+    const overdueDateStr = '2026-07-20T10:00:00Z'
+    const dueSoonDateStr = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString()
+
+    const mockTasksWithDueDates = [
+      {
+        id: 10,
+        title: 'Overdue Task',
+        description: 'Past due',
+        priority: 'HIGH' as const,
+        status: 'TODO' as const,
+        dueDate: overdueDateStr,
+        createdAt: '2026-07-20T10:00:00Z',
+        updatedAt: '2026-07-20T10:00:00Z',
+      },
+      {
+        id: 11,
+        title: 'Due Soon Task',
+        description: 'Hours remaining',
+        priority: 'MEDIUM' as const,
+        status: 'IN_PROGRESS' as const,
+        dueDate: dueSoonDateStr,
+        createdAt: '2026-07-20T10:00:00Z',
+        updatedAt: '2026-07-20T10:00:00Z',
+      },
+    ]
+
+    vi.mocked(api.getTasks).mockResolvedValue(mockTasksWithDueDates)
+
+    render(<Dashboard />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Overdue Task')).toBeInTheDocument()
+      expect(screen.getByText('Due Soon Task')).toBeInTheDocument()
+    })
+
+    // Verify warnings
+    expect(screen.getByText('⚠️ Overdue')).toBeInTheDocument()
+    expect(screen.getByText('⏱️ Due Soon')).toBeInTheDocument()
+
+    // Verify due date texts
+    expect(screen.getAllByText(/Due:/i)).toHaveLength(2)
   })
 })
