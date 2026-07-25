@@ -1088,7 +1088,7 @@ export default function Dashboard() {
                       </h4>
                     </div>
 
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0">
+                    <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all shrink-0">
                       <button
                         onClick={() => handleDuplicateTask(task)}
                         className="text-muted-foreground hover:text-primary p-1 rounded hover:bg-accent transition-colors cursor-pointer"

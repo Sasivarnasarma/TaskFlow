@@ -148,6 +148,9 @@ def logout(
         if not expires_at:
             expires_at = datetime.now(UTC) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
+        # Clean up any expired blacklisted tokens to prevent database bloat
+        db.query(TokenBlacklist).filter(TokenBlacklist.expires_at < datetime.now(UTC)).delete()
+
         # Add to blacklist if not already blacklisted
         existing = db.query(TokenBlacklist).filter(TokenBlacklist.token == token).first()
         if not existing:

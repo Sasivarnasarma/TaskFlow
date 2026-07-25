@@ -51,15 +51,15 @@ export default function MainLayout() {
           </div>
           <div className="flex items-center gap-4">
             {username && (
-              <div className="flex items-center gap-2.5 text-sm bg-secondary/40 border border-border px-3 py-1.5 rounded-xl">
-                <UserIcon className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Hello,</span>
-                <span className="font-semibold text-foreground">{username}</span>
+              <div className="flex items-center gap-1.5 sm:gap-2.5 text-sm bg-secondary/40 border border-border px-2 py-1 sm:px-3 sm:py-1.5 rounded-xl max-w-[120px] sm:max-w-[200px]">
+                <UserIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+                <span className="text-muted-foreground hidden sm:inline">Hello,</span>
+                <span className="font-semibold text-foreground truncate">{username}</span>
               </div>
             )}
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="p-2.5 rounded-xl border border-border hover:bg-secondary cursor-pointer"
+              className="p-2 sm:p-2.5 rounded-xl border border-border hover:bg-secondary cursor-pointer"
               aria-label="Toggle theme"
             >
               {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
@@ -67,11 +67,11 @@ export default function MainLayout() {
             {username && (
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-red-500/20 text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer text-sm font-semibold"
+                className="flex items-center gap-2 px-2.5 py-2 sm:px-3.5 sm:py-1.5 rounded-xl border border-red-500/20 text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer text-sm font-semibold"
                 aria-label="Log out"
               >
-                <LogOut className="h-4 w-4" />
-                <span>Logout</span>
+                <LogOut className="h-4 w-4 shrink-0" />
+                <span className="hidden sm:inline">Logout</span>
               </button>
             )}
           </div>
