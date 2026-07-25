@@ -1,20 +1,44 @@
 import { useEffect, useState } from 'react'
-import { Outlet } from 'react-router-dom'
-import { Sun, Moon, CheckSquare, Heart } from 'lucide-react'
+import { Outlet, useNavigate } from 'react-router-dom'
+import { Sun, Moon, CheckSquare, Heart, LogOut, User as UserIcon } from 'lucide-react'
 import { useTheme } from '../lib/theme-provider'
 import { api } from '../lib/api'
 
 export default function MainLayout() {
   const { theme, setTheme } = useTheme()
+  const navigate = useNavigate()
   const [apiVersion, setApiVersion] = useState<string | null>(null)
   const appVersion = import.meta.env.VITE_APP_VERSION || '0.0.0'
+  const [username, setUsername] = useState<string>('')
 
   useEffect(() => {
+    // Read user from localStorage
+    const storedUser = localStorage.getItem('taskflow_user')
+    if (storedUser) {
+      try {
+        const parsed = JSON.parse(storedUser)
+        setUsername(parsed.username || '')
+      } catch {
+        setUsername('')
+      }
+    }
+
     api
       .getVersion()
       .then((data) => setApiVersion(data?.version || null))
       .catch(() => setApiVersion(null))
   }, [])
+
+  const handleLogout = async () => {
+    try {
+      await api.logout()
+    } catch {
+      // Proceed with local logout even if network call fails
+    }
+    localStorage.removeItem('taskflow_token')
+    localStorage.removeItem('taskflow_user')
+    navigate('/login', { replace: true })
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-200">
@@ -26,13 +50,30 @@ export default function MainLayout() {
             <span>TaskFlow</span>
           </div>
           <div className="flex items-center gap-4">
+            {username && (
+              <div className="flex items-center gap-2.5 text-sm bg-secondary/40 border border-border px-3 py-1.5 rounded-xl">
+                <UserIcon className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Hello,</span>
+                <span className="font-semibold text-foreground">{username}</span>
+              </div>
+            )}
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="p-2 rounded-md hover:bg-secondary cursor-pointer"
+              className="p-2.5 rounded-xl border border-border hover:bg-secondary cursor-pointer"
               aria-label="Toggle theme"
             >
-              {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
+            {username && (
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-red-500/20 text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer text-sm font-semibold"
+                aria-label="Log out"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Logout</span>
+              </button>
+            )}
           </div>
         </div>
       </header>
