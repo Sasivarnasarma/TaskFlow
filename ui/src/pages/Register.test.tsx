@@ -25,7 +25,11 @@ vi.mock('../lib/api', () => ({
 describe('Register Component', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(api.getHealth).mockResolvedValue({ success: true, allowRegistration: true } as any)
+    vi.mocked(api.getHealth).mockResolvedValue({
+      status: 'ok',
+      version: '1.0.0',
+      allowRegistration: true,
+    })
     // Mock global URL object creator
     global.URL.createObjectURL = vi.fn(() => 'mock-url')
     global.URL.revokeObjectURL = vi.fn()
@@ -82,9 +86,15 @@ describe('Register Component', () => {
       </MemoryRouter>
     )
 
-    fireEvent.change(await screen.findByLabelText(/^Username$/i), { target: { value: 'validuser' } })
-    fireEvent.change(screen.getByLabelText(/^Password$/i), { target: { value: 'StrongPassword123!' } })
-    fireEvent.change(screen.getByLabelText(/^Confirm Password$/i), { target: { value: 'StrongPassword123!' } })
+    fireEvent.change(await screen.findByLabelText(/^Username$/i), {
+      target: { value: 'validuser' },
+    })
+    fireEvent.change(screen.getByLabelText(/^Password$/i), {
+      target: { value: 'StrongPassword123!' },
+    })
+    fireEvent.change(screen.getByLabelText(/^Confirm Password$/i), {
+      target: { value: 'StrongPassword123!' },
+    })
 
     fireEvent.click(screen.getByRole('button', { name: /Register/i }))
 

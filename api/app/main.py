@@ -1,6 +1,8 @@
+import asyncio
 import os
 from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
+from datetime import UTC, datetime
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
@@ -12,13 +14,10 @@ import app.models  # Register models for table creation
 from app.config import settings
 from app.database.base import Base
 from app.database.engine import engine
-from app.routers import auth, health, statistics, tasks
-
-
-import asyncio
-from datetime import UTC, datetime
 from app.database.session import SessionLocal
 from app.models.user import TokenBlacklist
+from app.routers import auth, health, statistics, tasks
+
 
 async def cleanup_expired_tokens() -> None:
     while True:
@@ -36,6 +35,7 @@ async def cleanup_expired_tokens() -> None:
         except Exception as e:
             # Avoid crashing the loop on db locks/etc.
             print(f"Error during expired tokens cleanup background task: {e}")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -58,10 +58,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Cancel background task on shutdown
     cleanup_task.cancel()
-    try:
+    with suppress(asyncio.CancelledError):
         await cleanup_task
-    except asyncio.CancelledError:
-        pass
 
 
 app = FastAPI(

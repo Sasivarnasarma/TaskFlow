@@ -54,9 +54,15 @@ describe('Recover Component', () => {
     )
 
     fireEvent.change(screen.getByLabelText(/^Username$/i), { target: { value: 'recoveruser' } })
-    fireEvent.change(screen.getByLabelText(/^Recovery Key$/i), { target: { value: 'old-recovery-key' } })
-    fireEvent.change(screen.getByLabelText(/^New Password$/i), { target: { value: 'NewStrongPassword123!' } })
-    fireEvent.change(screen.getByLabelText(/^Confirm Password$/i), { target: { value: 'NewStrongPassword123!' } })
+    fireEvent.change(screen.getByLabelText(/^Recovery Key$/i), {
+      target: { value: 'old-recovery-key' },
+    })
+    fireEvent.change(screen.getByLabelText(/^New Password$/i), {
+      target: { value: 'NewStrongPassword123!' },
+    })
+    fireEvent.change(screen.getByLabelText(/^Confirm Password$/i), {
+      target: { value: 'NewStrongPassword123!' },
+    })
 
     fireEvent.click(screen.getByRole('button', { name: /Reset Password/i }))
 
