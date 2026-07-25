@@ -1,6 +1,8 @@
+import asyncio
 import os
 from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
+from datetime import UTC, datetime
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
@@ -12,13 +14,52 @@ import app.models  # Register models for table creation
 from app.config import settings
 from app.database.base import Base
 from app.database.engine import engine
-from app.routers import health, statistics, tasks
+from app.database.session import SessionLocal
+from app.models.user import TokenBlacklist
+from app.routers import auth, health, statistics, tasks
+
+
+async def cleanup_expired_tokens() -> None:
+    while True:
+        try:
+            # Sleep for 1 hour (3600 seconds) before next run
+            await asyncio.sleep(3600)
+            db = SessionLocal()
+            try:
+                db.query(TokenBlacklist).filter(TokenBlacklist.expires_at < datetime.now(UTC)).delete()
+                db.commit()
+            finally:
+                db.close()
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            # Avoid crashing the loop on db locks/etc.
+            print(f"Error during expired tokens cleanup background task: {e}")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     Base.metadata.create_all(bind=engine)
+
+    # Initial startup cleanup of expired blacklisted tokens
+    db = SessionLocal()
+    try:
+        db.query(TokenBlacklist).filter(TokenBlacklist.expires_at < datetime.now(UTC)).delete()
+        db.commit()
+    except Exception as e:
+        print(f"Error during startup expired tokens cleanup: {e}")
+    finally:
+        db.close()
+
+    # Start periodic background cleanup task
+    cleanup_task = asyncio.create_task(cleanup_expired_tokens())
+
     yield
+
+    # Cancel background task on shutdown
+    cleanup_task.cancel()
+    with suppress(asyncio.CancelledError):
+        await cleanup_task
 
 
 app = FastAPI(
@@ -63,6 +104,7 @@ app.add_middleware(
 
 # API routes
 app.include_router(health.router, prefix=settings.API_PREFIX)
+app.include_router(auth.router, prefix=settings.API_PREFIX)
 app.include_router(tasks.router, prefix=settings.API_PREFIX)
 app.include_router(statistics.router, prefix=settings.API_PREFIX)
 

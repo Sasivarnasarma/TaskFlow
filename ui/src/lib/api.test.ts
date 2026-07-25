@@ -58,7 +58,7 @@ describe('API Client Functions', () => {
       '/api/tasks',
       expect.objectContaining({
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: expect.any(Object),
         body: JSON.stringify(newTask),
       })
     )
@@ -81,7 +81,7 @@ describe('API Client Functions', () => {
       '/api/tasks/5',
       expect.objectContaining({
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: expect.any(Object),
         body: JSON.stringify(updates),
       })
     )

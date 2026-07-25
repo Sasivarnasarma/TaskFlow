@@ -13,20 +13,21 @@ class TaskService:
     def get_tasks(
         self,
         db: Session,
+        user_id: int,
         status: str | None = None,
         priority: str | None = None,
         search: str | None = None,
         sort: str | None = None,
     ) -> list[Task]:
-        return self.repository.get_all(db, status, priority, search, sort)
+        return self.repository.get_all(db, user_id, status, priority, search, sort)
 
-    def get_task_by_id(self, db: Session, task_id: int) -> Task:
-        task = self.repository.get_by_id(db, task_id)
+    def get_task_by_id(self, db: Session, task_id: int, user_id: int) -> Task:
+        task = self.repository.get_by_id(db, task_id, user_id)
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
         return task
 
-    def create_task(self, db: Session, task_data: TaskCreate) -> Task:
+    def create_task(self, db: Session, task_data: TaskCreate, user_id: int) -> Task:
         if not task_data.title.strip():
             raise HTTPException(status_code=422, detail="Title cannot be empty")
 
@@ -34,11 +35,12 @@ class TaskService:
             title=task_data.title.strip(),
             description=task_data.description,
             priority=task_data.priority.value if task_data.priority else "LOW",
+            user_id=user_id,
         )
         return self.repository.create(db, task)
 
-    def update_task(self, db: Session, task_id: int, task_data: TaskUpdate) -> Task:
-        task = self.get_task_by_id(db, task_id)
+    def update_task(self, db: Session, task_id: int, task_data: TaskUpdate, user_id: int) -> Task:
+        task = self.get_task_by_id(db, task_id, user_id)
 
         updates = {}
         if task_data.title is not None:
@@ -57,6 +59,6 @@ class TaskService:
 
         return self.repository.update(db, task, updates)
 
-    def delete_task(self, db: Session, task_id: int) -> None:
-        task = self.get_task_by_id(db, task_id)
+    def delete_task(self, db: Session, task_id: int, user_id: int) -> None:
+        task = self.get_task_by_id(db, task_id, user_id)
         self.repository.delete(db, task)

@@ -8,12 +8,13 @@ class TaskRepository:
     def get_all(
         self,
         db: Session,
+        user_id: int,
         status: str | None = None,
         priority: str | None = None,
         search: str | None = None,
         sort: str | None = None,
     ) -> list[Task]:
-        query = db.query(Task)
+        query = db.query(Task).filter(Task.user_id == user_id)
 
         if status:
             query = query.filter(Task.status == status)
@@ -40,8 +41,8 @@ class TaskRepository:
 
         return query.all()
 
-    def get_by_id(self, db: Session, task_id: int) -> Task | None:
-        return db.query(Task).filter(Task.id == task_id).first()
+    def get_by_id(self, db: Session, task_id: int, user_id: int) -> Task | None:
+        return db.query(Task).filter(Task.id == task_id, Task.user_id == user_id).first()
 
     def create(self, db: Session, task: Task) -> Task:
         db.add(task)

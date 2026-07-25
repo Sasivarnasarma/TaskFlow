@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import Dashboard from './Dashboard'
 import { api } from '../lib/api'
@@ -170,7 +170,9 @@ describe('Dashboard Component', () => {
     expect(screen.getByText(/Deleting "First Test Task".../i)).toBeInTheDocument()
 
     // Fast-forward fake timers by 5 seconds
-    vi.advanceTimersByTime(5000)
+    act(() => {
+      vi.advanceTimersByTime(5000)
+    })
 
     // Restore real timers so waitFor can run normally
     vi.useRealTimers()
