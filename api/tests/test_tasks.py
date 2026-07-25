@@ -95,3 +95,46 @@ async def test_delete_task_endpoint(auth_client: AsyncClient):
     # Verify task is deleted
     get_res = await auth_client.get(f"/api/tasks/{task_id}")
     assert get_res.status_code == 404
+
+
+@pytest.mark.anyio
+async def test_task_due_dates_and_sorting(auth_client: AsyncClient):
+    # 1. Create a task with due date
+    due_str = "2026-07-26T12:00:00"
+    payload = {"title": "Task with due date", "dueDate": due_str}
+    response = await auth_client.post("/api/tasks", json=payload)
+    assert response.status_code == 201
+    body = response.json()
+    assert body["data"]["dueDate"] is not None
+    assert "2026-07-26T12:00" in body["data"]["dueDate"]
+    task_id = body["data"]["id"]
+
+    # 2. Update/null the due date
+    update_payload = {"dueDate": None}
+    update_res = await auth_client.put(f"/api/tasks/{task_id}", json=update_payload)
+    assert update_res.status_code == 200
+    assert update_res.json()["data"]["dueDate"] is None
+
+    # 3. Create multiple tasks with different due dates to test sorting
+    # Note: SQLite defaults NULLs to last in ASC and DESC if nulls_last is used!
+    await auth_client.post("/api/tasks", json={"title": "Later Task", "dueDate": "2026-07-30T10:00:00"})
+    await auth_client.post("/api/tasks", json={"title": "Earlier Task", "dueDate": "2026-07-20T10:00:00"})
+
+    # Soonest first
+    res_asc = await auth_client.get("/api/tasks?sort=due_date_asc")
+    assert res_asc.status_code == 200
+    tasks_asc = res_asc.json()["data"]
+    # Filter only tasks with due dates to verify sorting order
+    dated_tasks_asc = [t for t in tasks_asc if t["dueDate"] is not None]
+    assert len(dated_tasks_asc) == 2
+    assert dated_tasks_asc[0]["title"] == "Earlier Task"
+    assert dated_tasks_asc[1]["title"] == "Later Task"
+
+    # Latest first
+    res_desc = await auth_client.get("/api/tasks?sort=due_date_desc")
+    assert res_desc.status_code == 200
+    tasks_desc = res_desc.json()["data"]
+    dated_tasks_desc = [t for t in tasks_desc if t["dueDate"] is not None]
+    assert len(dated_tasks_desc) == 2
+    assert dated_tasks_desc[0]["title"] == "Later Task"
+    assert dated_tasks_desc[1]["title"] == "Earlier Task"

@@ -27,6 +27,7 @@ class Task(Base):
     description = Column(String(1000), nullable=True)
     priority = Column(String(50), default=TaskPriority.LOW.value, nullable=False)
     status = Column(String(50), default=TaskStatus.TODO.value, nullable=False)
+    due_date = Column(DateTime(timezone=True), nullable=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(

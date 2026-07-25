@@ -11,6 +11,7 @@ class TaskBase(BaseModel):
     description: str | None = Field(default=None, max_length=1000)
     priority: TaskPriority = TaskPriority.LOW
     status: TaskStatus = TaskStatus.TODO
+    due_date: datetime | None = None
 
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, from_attributes=True)
 
@@ -19,6 +20,7 @@ class TaskCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=150)
     description: str | None = Field(default=None, max_length=1000)
     priority: TaskPriority | None = TaskPriority.LOW
+    due_date: datetime | None = None
 
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
@@ -28,6 +30,7 @@ class TaskUpdate(BaseModel):
     description: str | None = Field(default=None, max_length=1000)
     priority: TaskPriority | None = None
     status: TaskStatus | None = None
+    due_date: datetime | None = None
 
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
